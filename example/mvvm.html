@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<section id="example" data-if="count > 10">
+		<h1 data-onclick="changeMsg">{{ msg }}</h1>
+		<ul>
+			<li data-each="i in arr">
+				{{ i }} is : {{ arr[i] }}
+			</li>
+		</ul>
+	</section>
+	<script src="../index.js"></script>
+	<script>
+		var vm = new Dbind({
+			el: example,
+			data: {
+				msg: 'hello world',
+				count: 100,
+				arr: ['lc', 'casles']
+			},
+			changeMsg: function() {
+				this.setdata({
+					msg: this.data.msg.split('').reverse().toString()
+				})
+			}
+		})
+
+		vm.setdata({
+			count: 1,
+			arr: []
+		})
+
+	</script>
+</body>
+</html>
