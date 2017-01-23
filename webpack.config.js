@@ -1,14 +1,18 @@
 module.exports = {
-    entry: './src/dbind.js',
+    entry: './src/ob.js',
     output: {
-        path: './lib',
-        filename: 'dbind.js'
+        path: './',
+        filename: 'index.js'
     },
     module: {
         loaders: [
             {
                 test: /\.js$/,
-                loader: 'babel'
+                loader: 'babel',
+                query: {
+                    presets: ['es2015'],
+                    plugins: ['transform-class-properties']
+                }
             }
         ]
     },

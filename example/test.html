@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        p {
+            display: block;
+        }
+    </style>
+</head>
+<body>{{name}}<div href="{{ 'http://' + href }}" name="2121{{{name}}}" data-if="b > 1" onclick="{{ handle(1, 2, $event) }}">
+        hello my name is {{name}} 
+        and my age is {{{age}}}
+        {{ span }}
+        <br/>
+        <span data-if="b > 0">
+            
+        </span>
+        <span data-else-if="b < 10">
+            我是2
+        </span>
+        <span data-else>
+            我是3
+        </span>
+        <component onclick="{{ handle }}" data-from="'frist-component'" hello="jjaas" name="{{name}}" age="{{{b}}}" kk="1"></component>
+        <span data-each="val, i in [1, 3, 5, 7, 9]" data-if="i > 1">
+            {{ val }}
+        </span>
+    </div>
+    <script src="../index.js"></script>
+    <script>
+        const app = Observer.watch(document.body, {
+            href: 'www.baidu.com',
+            name: 'designer',
+            b: 100,
+            handle: function(v1, v2, $event) {
+                app.set('name', this.name + 1)
+            },
+            age: 20,
+            span: document.createElement('span')
+        });
+        Observer.registerComponent('frist-component', Observer.createComponent({
+            template: `<div onclick="{{ handle }}" value="{{names}}">
+                {{name}} {{age}}
+            </div>
+            <component data-from="'sec-component'" hello="{{ 1 + 2 }}" age="2"></component>
+            <span>2121{{name}}</span>`,
+            data: {
+                names: [1, 3 ,4]
+            },
+            components: {
+                'sec-component': Observer.createComponent({
+                    template: `<p>第二个组件{{age}}</p>`,
+                })
+            }
+        }));
+    </script>
+</body>
+</html>
