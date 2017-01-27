@@ -46,7 +46,9 @@ export default class ElementWatcher {
         this.renderInf = this.__handleResolvedInstructions();
         this.renderCount ++;
         if(this.renderInf.shouldRender || this.renderInf.shouldRender === null) {
-            this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
+            if(this.renderInf.shouldRender) {
+                this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
+            }
             this.__bindAttrs();
             if(this.renderInf.shouldInit || this.renderInf.shouldInit  === null) {
                 this.__bindEvents();
@@ -63,8 +65,9 @@ export default class ElementWatcher {
      * 
      * @memberOf ElementWatcher
      */
-    reset(cb = () => {}) {
-        this.render(cb);
+    reset(cb = () => {}, prevData, nextData) {
+        if(prevData !== nextData)
+            this.render(cb);
     }
     __setBaseElementDisplay(display) {
         this.base.element.style.display = display;
@@ -216,7 +219,7 @@ export default class ElementWatcher {
             const parsed = this.base.statementExtract(item.value);
             let obj = {};
             obj.name = item.name;
-            obj.value = item.value;
+            obj.value = parsed[0].value;
             if(parsed.length > 1) {
                 throw '';
             } else {
@@ -291,7 +294,9 @@ export default class ElementWatcher {
                 this.base.obdata,
                 null,
                 this.BaseWatcher.TextWatcher,
-                this.base.modelExtractId
+                this.base.modelExtractId,
+                this.base.components,
+                this.base
             )];
         } else {
             let previousWatcher = null;
@@ -302,7 +307,9 @@ export default class ElementWatcher {
                         this.base.obdata, 
                         previousWatcher,
                         null,
-                        this.base.modelExtractId
+                        this.base.modelExtractId,
+                        this.base.components,
+                        this.base
                     );
                     previousWatcher = childWatcher;
                     return childWatcher;

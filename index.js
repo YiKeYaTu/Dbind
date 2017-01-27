@@ -48,11 +48,11 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Component = __webpack_require__(12);
+	var _Component = __webpack_require__(1);
 
 	var _Component2 = _interopRequireDefault(_Component);
 
-	var _ComponentWatcher = __webpack_require__(7);
+	var _ComponentWatcher = __webpack_require__(3);
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
@@ -117,35 +117,513 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _ManagerWatcher = __webpack_require__(3);
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var Component = function () {
+	    function Component() {
+	        _classCallCheck(this, Component);
+
+	        this.element = null;
+	        this.refs = null;
+	        this.template = null;
+	    }
+
+	    _createClass(Component, [{
+	        key: 'init',
+	        value: function init(element, data) {
+	            this.element = element;
+	            this.__setRefs();
+	        }
+	    }, {
+	        key: '__setRefs',
+	        value: function __setRefs() {
+	            var refs = {};
+	            (0, _utilityFunc.walkElement)(this.element, function (element) {
+	                var ref = element.getAttribute('ref');
+	                ref && (refs[ref] = element);
+	            });
+	            this.refs = refs;
+	        }
+	    }, {
+	        key: 'didMount',
+	        value: function didMount() {}
+	    }, {
+	        key: 'didUpdate',
+	        value: function didUpdate(prevData, nextData) {}
+	    }, {
+	        key: 'shouldUpdate',
+	        value: function shouldUpdate(prevData, nextData) {}
+	    }]);
+
+	    return Component;
+	}();
+
+	exports.default = Component;
+
+/***/ },
+/* 2 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.toArray = toArray;
+	exports.delay = delay;
+	exports.is = is;
+	exports.deepClone = deepClone;
+	exports.randomId = randomId;
+	exports.objectAssign = objectAssign;
+	exports.walkElement = walkElement;
+	function toArray(arrayLike) {
+	    return [].slice.call(arrayLike);
+	}
+	function delay(fn) {
+	    var t = Date.now();
+	    setTimeout(function () {
+	        fn(Date.now() - t);
+	    });
+	}
+	function is(target, type) {
+	    return Object.prototype.toString.call(target).toLowerCase() === '[object ' + type.toLowerCase() + ']';
+	}
+	function deepClone(t) {
+	    if (is(t, 'array')) {
+	        t = t.map(function (item) {
+	            return deepClone(item);
+	        });
+	    } else if (is(t, 'object')) {
+	        var nt = {};
+	        for (var key in t) {
+	            nt[key] = deepClone(t[key]);
+	        }
+	        return nt;
+	    } else {
+	        return t;
+	    }
+	}
+	function randomId() {
+	    return Date.now() + Math.random();
+	}
+	function objectAssign() {
+	    var arg = [].slice.call(arguments, 1);
+	    var target = arguments[0];
+	    arg.forEach(function (item) {
+	        for (var key in item) {
+	            target[key] = item[key];
+	        }
+	    });
+	    return target;
+	}
+	function walkElement(dom, cb) {
+	    if (is(dom, 'array')) {
+	        dom.forEach(function (item) {
+	            while (item) {
+	                cb(item);
+	                walkElement(item.firstElementChild, cb);
+	                item = item.nextElementSibling;
+	            }
+	        });
+	    } else {
+	        while (dom) {
+	            cb(dom);
+	            walkElement(dom.firstElementChild, cb);
+	            dom = dom.nextElementSibling;
+	        }
+	    }
+	}
+
+/***/ },
+/* 3 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _utilityFunc = __webpack_require__(2);
+
+	var _statementExtract = __webpack_require__(4);
+
+	var _Component = __webpack_require__(1);
+
+	var _Component2 = _interopRequireDefault(_Component);
+
+	var _modelSettlement = __webpack_require__(5);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var ComponentWatcher = function () {
+	    function ComponentWatcher(base, BaseWatcher) {
+	        _classCallCheck(this, ComponentWatcher);
+
+	        this.base = base;
+	        this.BaseWatcher = BaseWatcher;
+	        this.moudleId = this.base.modelExtractId;
+	        this.instruction = this.__getInstruction();
+	        this.props = this.__getProps();
+	        this.component = this.__getComponent();
+	        this.model = this.__getModel();
+	        this.__remove();
+	    }
+
+	    _createClass(ComponentWatcher, [{
+	        key: 'render',
+	        value: function render() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+	            if (!this.component) return;
+	            this.child = this.__renderComponent();
+	            this.component.init(this.child);
+	            this.component.didMount();
+	            this.resolvedProps = this.__bindProps();
+	            this.data = (0, _utilityFunc.objectAssign)({}, this.component.data, this.resolvedProps);
+	            this.childWatcher = this.__setChildWatcher();
+	        }
+	    }, {
+	        key: 'reset',
+	        value: function reset() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+	            var prevData = arguments[1];
+	            var nextData = arguments[2];
+
+	            if (this.__getComponent() !== this.component) {
+	                this.childWatcher.forEach(function (item) {
+	                    item.base.element.parent.removeChild(item.base.element);
+	                });
+	                this.render(cb);
+	            } else {
+	                var oldProps = this.resolvedProps;
+	                var cbs = [];
+	                this.resolvedProps = this.__bindProps();
+	                this.component.didUpdate(oldProps, this.resolvedProps);
+	                for (var key in oldProps) {
+	                    if (oldProps[key] !== this.resolvedProps[key]) {
+	                        this.data[key] = this.resolvedProps[key];
+	                        cbs.push((0, _modelSettlement.get)(this.moudleId, key));
+	                    }
+	                }
+	                cbs.forEach(function (fns) {
+	                    fns.forEach(function (fn) {
+	                        fn();
+	                    });
+	                });
+	            }
+	        }
+	    }, {
+	        key: '__remove',
+	        value: function __remove() {
+	            var element = this.base.element;
+	            element.parentNode.removeChild(element);
+	        }
+	    }, {
+	        key: '__setChildWatcher',
+	        value: function __setChildWatcher() {
+	            var _this = this;
+
+	            var previous = null;
+	            return this.child.map(function (item) {
+	                return new _this.BaseWatcher(item, _this.data, previous, null, _this.moudleId, _this.component.components, _this.base);
+	                previous = item;
+	            });
+	        }
+	    }, {
+	        key: '__bindProps',
+	        value: function __bindProps() {
+	            var _this2 = this;
+
+	            var props = {};
+	            this.props.normalProps.forEach(function (item) {
+	                props[item.name] = item.value[0].value;
+	            });
+	            this.props.obProps.forEach(function (prop) {
+	                var str = null;
+	                prop.value.forEach(function (item) {
+	                    if (item.type === _statementExtract.statementType[0] || item.type === _statementExtract.statementType[1]) {
+	                        if (str === null) {
+	                            str = _this2.base.parentWatcher.execStatement(item.value);
+	                        } else {
+	                            str += _this2.base.parentWatcher.execStatement(item.value);
+	                        }
+	                    } else {
+	                        if (str === null) {
+	                            str = item.value;
+	                        } else {
+	                            str += item.value;
+	                        }
+	                    }
+	                });
+	                props[prop.name] = str;
+	            });
+	            return props;
+	        }
+	    }, {
+	        key: '__renderComponent',
+	        value: function __renderComponent() {
+	            if (!this.component) return;
+	            var frg = document.createDocumentFragment();
+	            var template = document.createElement('div');
+	            var parent = this.base.pastDOMInformation.parentNode;
+	            template.innerHTML = this.component.template;
+	            var child = (0, _utilityFunc.toArray)(template.childNodes);
+	            while (template.childNodes[0]) {
+	                frg.appendChild(template.childNodes[0]);
+	            }
+	            parent.insertBefore(frg, this.base.pastDOMInformation.nextSibling);
+	            return child;
+	        }
+	    }, {
+	        key: '__getComponent',
+	        value: function __getComponent() {
+	            var componentDataFrom = this.base.execStatement(this.instruction.value);
+	            var component = null;
+	            if (typeof componentDataFrom === 'string') {
+	                if (ComponentWatcher.components[componentDataFrom]) {
+	                    component = ComponentWatcher.components[componentDataFrom];
+	                } else if (this.base.components[componentDataFrom]) {
+	                    component = this.base.components[componentDataFrom];
+	                }
+	            } else if (componentDataFrom instanceof _Component2.default) {
+	                component = componentDataFrom;
+	            }
+	            return component;
+	        }
+	    }, {
+	        key: '__getInstruction',
+	        value: function __getInstruction() {
+	            return this.base.__filterAttr(ComponentWatcher.instructions, true)[0];
+	        }
+	    }, {
+	        key: '__getProps',
+	        value: function __getProps() {
+	            var _this3 = this;
+
+	            var props = this.base.__filterAttr(ComponentWatcher.instructions, false);
+	            var obProps = [],
+	                normalProps = [];
+	            props.forEach(function (prop) {
+	                var parsed = _this3.base.statementExtract(prop.value);
+	                var type = null,
+	                    ob = false;
+	                var obj = {};
+	                obj.name = prop.name;
+	                obj.value = parsed.map(function (item) {
+	                    if (item.type === _statementExtract.statementType[0] || item.type === _statementExtract.statementType[1]) {
+	                        ob = true;
+	                    }
+	                    return item;
+	                });
+	                if (ob === true) {
+	                    obProps.push(obj);
+	                } else {
+	                    normalProps.push(obj);
+	                }
+	            });
+	            return { obProps: obProps, normalProps: normalProps };
+	        }
+	    }, {
+	        key: '__getModel',
+	        value: function __getModel() {
+	            var instructionModel = this.__getInstructionsModel(),
+	                propsModel = this.__getPropsModel();
+	            return instructionModel.concat(propsModel);
+	        }
+	    }, {
+	        key: '__getInstructionsModel',
+	        value: function __getInstructionsModel() {
+	            var res = [];
+	            this.base.modelExtract(this.instruction.value).forEach(function (item) {
+	                res.push(item.value);
+	            });
+	            return res;
+	        }
+	    }, {
+	        key: '__getPropsModel',
+	        value: function __getPropsModel() {
+	            var _this4 = this;
+
+	            var res = [];
+	            this.props.obProps.forEach(function (prop) {
+	                prop.value.forEach(function (item) {
+	                    if (item.type === _statementExtract.statementType[0]) {
+	                        _this4.base.modelExtract(item.value).forEach(function (model) {
+	                            res.push(model.value);
+	                        });
+	                    }
+	                });
+	            });
+	            return res;
+	        }
+	    }]);
+
+	    return ComponentWatcher;
+	}();
+
+	ComponentWatcher.nodeNames = ['component'];
+	ComponentWatcher.instructions = ['data-from'];
+	ComponentWatcher.components = {};
+	exports.default = ComponentWatcher;
+
+/***/ },
+/* 4 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.default = statementExtract;
+	var normalStatement = { start: '{{', end: '}}' };
+	var onceStatement = { start: '{{{', end: '}}}' };
+	var statementStart = '{';
+	var statementEnd = '}';
+	var marksExp = /['"]/;
+	var statementType = exports.statementType = ['normalStatement', 'onceStatement', 'constString'];
+
+	function statementExtract(str) {
+	    var len = str.length;
+	    var resolvedVector = [];
+	    var stack = [];
+	    var marksStack = [];
+	    var i = -1,
+	        p = 0;
+	    while (++i < len) {
+	        var char = str[i];
+	        if (char === statementStart && marksStack.length === 0) {
+	            while (i < len && str[i] === statementStart) {
+	                stack.push(char);
+	                i++;
+	            }
+	            i--;
+	            if (stack.join('') === normalStatement.start || stack.join('') === onceStatement.start) {
+	                if (resolvedVector[p]) p++;
+	            } else {
+	                throw str + '\u6A21\u7248\u8BED\u53E5\u4E2D' + str.slice(i - 3, i + 3) + '\u8BED\u6CD5\u9519\u8BEF';
+	            }
+	        } else if (char === statementEnd && marksStack.length === 0) {
+	            while (i < len && str[i] === statementEnd) {
+	                stack.pop();
+	                i++;
+	            }
+	            i--;
+	            if (stack.length !== 0) {
+	                throw str + '\u6A21\u7248\u8BED\u53E5\u4E2D' + str.slice(i - 3, i + 3) + '\u8BED\u6CD5\u9519\u8BEF';
+	            }
+	            p++;
+	        } else {
+	            if (!resolvedVector[p]) {
+	                resolvedVector[p] = {
+	                    type: stack.length === 0 ? statementType[2] : stack.length === 2 ? statementType[0] : statementType[1],
+	                    value: ''
+	                };
+	            }
+	            if (char.match(marksExp) && stack.length > 0) {
+	                if (marksStack.length > 0) {
+	                    if (str[i - 1] !== '\\') {
+	                        marksStack.pop();
+	                    }
+	                } else {
+	                    marksStack.push(char);
+	                }
+	            }
+	            resolvedVector[p].value += char;
+	        }
+	    }
+	    return resolvedVector;
+	}
+
+/***/ },
+/* 5 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+	exports.set = set;
+	exports.get = get;
+	exports.all = all;
+
+	var _BaseWatcher = __webpack_require__(6);
+
+	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	var modelSettlement = {};
+	function set(modelExtractId, key, watcher) {
+	    if (!(watcher instanceof _BaseWatcher2.default)) throw new TypeError();
+	    if (!modelSettlement[modelExtractId]) {
+	        modelSettlement[modelExtractId] = {};
+	    }
+	    var target = modelSettlement[modelExtractId];
+	    if (target[key]) {
+	        target[key].push(watcher);
+	    } else {
+	        target[key] = [watcher];
+	    }
+	}
+	function get(modelExtractId, key) {
+	    return modelSettlement[modelExtractId] && modelSettlement[modelExtractId][key] || null;
+	}
+	function all(modelExtractId) {
+	    return modelSettlement[modelExtractId];
+	}
+
+/***/ },
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _utilityFunc = __webpack_require__(2);
+
+	var _ManagerWatcher = __webpack_require__(7);
 
 	var _ManagerWatcher2 = _interopRequireDefault(_ManagerWatcher);
 
-	var _ElementWatcher = __webpack_require__(4);
+	var _ElementWatcher = __webpack_require__(8);
 
 	var _ElementWatcher2 = _interopRequireDefault(_ElementWatcher);
 
-	var _ComponentWatcher = __webpack_require__(7);
+	var _ComponentWatcher = __webpack_require__(3);
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _TextWatcher = __webpack_require__(8);
+	var _TextWatcher = __webpack_require__(10);
 
 	var _TextWatcher2 = _interopRequireDefault(_TextWatcher);
 
-	var _TemplateWatcher = __webpack_require__(9);
+	var _TemplateWatcher = __webpack_require__(11);
 
 	var _TemplateWatcher2 = _interopRequireDefault(_TemplateWatcher);
 
-	var _modelExtract2 = __webpack_require__(10);
+	var _modelExtract2 = __webpack_require__(12);
 
 	var _modelExtract3 = _interopRequireDefault(_modelExtract2);
 
-	var _statementExtract2 = __webpack_require__(6);
+	var _statementExtract2 = __webpack_require__(4);
 
 	var _statementExtract3 = _interopRequireDefault(_statementExtract2);
 
-	var _modelSettlement = __webpack_require__(11);
+	var _modelSettlement = __webpack_require__(5);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -172,19 +650,20 @@
 	        var forceWatcherType = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
 	        var modelExtractId = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
 	        var components = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : null;
+	        var parentWatcher = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : null;
 
 	        _classCallCheck(this, BaseWatcher);
 
 	        this.element = element;
 	        this.components = components;
-	        this.previousObdata = null;
+	        this.parentWatcher = parentWatcher;
 	        this.obdata = obdata;
 	        this.previous = previous;
 	        this.rendering = false;
 	        this.pastDOMInformation = this.__getPastDOMInformation();
+	        this.modelExtractId = this.__getModelExtractId(modelExtractId);
 	        this.obtype = this.__getType(forceWatcherType);
 	        this.obwatcher = this.__getWatcher();
-	        this.modelExtractId = modelExtractId || this.obwatcher.modelId;
 	        this.__hangonModel(this.modelExtractId);
 
 	        this.render();
@@ -201,17 +680,53 @@
 	    }, {
 	        key: 'reset',
 	        value: function reset() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
 	            var _this = this;
 
-	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+	            var prevData = arguments[1];
+	            var nextData = arguments[2];
 
 	            if (this.rendering !== true) {
 	                this.__setRendering(true);
 	                (0, _utilityFunc.delay)(function (time) {
-	                    _this.obwatcher.reset();
+	                    _this.obwatcher.reset(cb, prevData, nextData);
 	                    cb(time);
 	                    _this.__setRendering(false);
 	                });
+	            }
+	        }
+	    }, {
+	        key: 'setObData',
+	        value: function setObData() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+	            var prevData = (0, _utilityFunc.objectAssign)({}, this.obdata);
+	            var nextData = (0, _utilityFunc.objectAssign)({}, this.obdata);
+	            if (arguments.length === 3) {
+	                var key = arguments[1],
+	                    val = arguments[2];
+	                nextData[key] = val;
+	            } else {
+	                if (_typeof(arguments[1]) !== 'object') {
+	                    throw '';
+	                } else {
+	                    var dataObj = arguments[1];
+	                    for (var _key in dataObj) {
+	                        nextData[_key] = dataObj[_key];
+	                    }
+	                }
+	            }
+	            this.obdata = nextData;
+	            this.reset(cb, prevData, nextData);
+	        }
+	    }, {
+	        key: '__getModelExtractId',
+	        value: function __getModelExtractId(modelExtractId) {
+	            if (this.obtype === BaseWatcher.ComponentWatcher) {
+	                return (0, _utilityFunc.randomId)();
+	            } else {
+	                return modelExtractId;
 	            }
 	        }
 	    }, {
@@ -359,7 +874,7 @@
 	            var model = this.obwatcher.model;
 	            if (model) {
 	                model.forEach(function (item) {
-	                    (0, _modelSettlement.set)(_this2.modelExtractId, item, _this2.obwatcher.reset.bind(_this2.obwatcher));
+	                    (0, _modelSettlement.set)(_this2.modelExtractId, item, _this2);
 	                });
 	            }
 	        }
@@ -429,7 +944,7 @@
 	    }, {
 	        key: 'execStatement',
 	        value: function execStatement(statement) {
-	            return new Function('data', 'with(data) { return ' + statement + ';}')(this.obdata);
+	            return new Function('data', 'with(data) { return ' + statement + ';}').call(this.obdata, this.obdata);
 	        }
 	    }]);
 
@@ -444,81 +959,7 @@
 	exports.default = BaseWatcher;
 
 /***/ },
-/* 2 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.toArray = toArray;
-	exports.delay = delay;
-	exports.is = is;
-	exports.deepClone = deepClone;
-	exports.randomId = randomId;
-	exports.objectAssign = objectAssign;
-	exports.walkElement = walkElement;
-	function toArray(arrayLike) {
-	    return [].slice.call(arrayLike);
-	}
-	function delay(fn) {
-	    var t = Date.now();
-	    setTimeout(function () {
-	        fn(Date.now() - t);
-	    });
-	}
-	function is(target, type) {
-	    return Object.prototype.toString.call(target).toLowerCase() === '[object ' + type.toLowerCase() + ']';
-	}
-	function deepClone(t) {
-	    if (is(t, 'array')) {
-	        t = t.map(function (item) {
-	            return deepClone(item);
-	        });
-	    } else if (is(t, 'object')) {
-	        var nt = {};
-	        for (var key in t) {
-	            nt[key] = deepClone(t[key]);
-	        }
-	        return nt;
-	    } else {
-	        return t;
-	    }
-	}
-	function randomId() {
-	    return Date.now() + Math.random();
-	}
-	function objectAssign() {
-	    var arg = [].slice.call(arguments, 1);
-	    var target = arguments[0];
-	    arg.forEach(function (item) {
-	        for (var key in item) {
-	            target[key] = item[key];
-	        }
-	    });
-	    return target;
-	}
-	function walkElement(dom, cb) {
-	    if (is(dom, 'array')) {
-	        dom.forEach(function (item) {
-	            while (item) {
-	                cb(item);
-	                walkElement(item.firstElementChild, cb);
-	                item = item.nextElementSibling;
-	            }
-	        });
-	    } else {
-	        while (dom) {
-	            cb(dom);
-	            walkElement(dom.firstElementChild, cb);
-	            dom = dom.nextElementSibling;
-	        }
-	    }
-	}
-
-/***/ },
-/* 3 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -530,6 +971,8 @@
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _utilityFunc = __webpack_require__(2);
+
+	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -562,7 +1005,7 @@
 	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
 
 	            this.childWacther.forEach(function (item) {
-	                var node = item.base.element;
+	                var node = item.element;
 	                node.parentNode.removeChild(node);
 	            });
 	            this.render();
@@ -577,9 +1020,13 @@
 	            this.childWacther.forEach(function (item) {
 	                frg.appendChild(item[0]);
 	            });
-	            next.parentNode.insertBefore(frg, next);
-	            this.childWacther = this.childWacther.forEach(function (item) {
-	                return new _this.BaseWatcher(item[0], item[1], item[2], item[3], item[4]);
+	            if (next) {
+	                next.parentNode.insertBefore(frg, next);
+	            } else {
+	                this.base.pastDOMInformation.parentNode.appendChild(frg);
+	            }
+	            this.childWacther = this.childWacther.map(function (item) {
+	                return new (Function.prototype.bind.apply(_this.BaseWatcher, [null].concat(_toConsumableArray(item))))();
 	            });
 	        }
 	    }, {
@@ -602,17 +1049,17 @@
 	                    obdata[_this2.parameter[0]] = item;
 	                    _this2.parameter[1] && (obdata[_this2.parameter[1]] = index);
 	                    _this2.parameter[2] && (obdata[_this2.parameter[2]] = index);
-	                    return [_this2.__cloneElement(_this2.base.element.innerHTML), obdata, _this2.base.previous, null, _this2.base.modelExtractId];
+	                    return [_this2.__cloneElement(_this2.base.element.innerHTML), obdata, _this2.base.previous, null, _this2.base.modelExtractId, _this2.base.components, _this2.base];
 	                });
 	            } else if ((0, _utilityFunc.is)(vector, 'object')) {
 	                var child = [];
-	                var obdata = (0, _utilityFunc.objectAssign)({}, this.base.obdata);
 	                var i = 0;
 	                for (var key in vector) {
+	                    var obdata = (0, _utilityFunc.objectAssign)({}, this.base.obdata);
 	                    obdata[this.parameter[0]] = vector[key];
 	                    this.parameter[1] && (obdata[this.parameter[1]] = key);
 	                    this.parameter[2] && (obdata[this.parameter[2]] = i);
-	                    child.push([this.__cloneElement(this.base.element.innerHTML), obdata, this.base.previous, null, this.base.modelExtractId]);
+	                    child.push([this.__cloneElement(this.base.element.innerHTML), obdata, this.base.previous, null, this.base.modelExtractId, this.base.components, this.base]);
 	                    i++;
 	                }
 	                return child;
@@ -679,7 +1126,7 @@
 	exports.default = ManagerWatcher;
 
 /***/ },
-/* 4 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -692,11 +1139,11 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _event = __webpack_require__(5);
+	var _event = __webpack_require__(9);
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _statementExtract = __webpack_require__(6);
+	var _statementExtract = __webpack_require__(4);
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -748,7 +1195,9 @@
 	            this.renderInf = this.__handleResolvedInstructions();
 	            this.renderCount++;
 	            if (this.renderInf.shouldRender || this.renderInf.shouldRender === null) {
-	                this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
+	                if (this.renderInf.shouldRender) {
+	                    this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
+	                }
 	                this.__bindAttrs();
 	                if (this.renderInf.shouldInit || this.renderInf.shouldInit === null) {
 	                    this.__bindEvents();
@@ -770,8 +1219,10 @@
 	        key: 'reset',
 	        value: function reset() {
 	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+	            var prevData = arguments[1];
+	            var nextData = arguments[2];
 
-	            this.render(cb);
+	            if (prevData !== nextData) this.render(cb);
 	        }
 	    }, {
 	        key: '__setBaseElementDisplay',
@@ -967,7 +1418,7 @@
 	                var parsed = _this6.base.statementExtract(item.value);
 	                var obj = {};
 	                obj.name = item.name;
-	                obj.value = item.value;
+	                obj.value = parsed[0].value;
 	                if (parsed.length > 1) {
 	                    throw '';
 	                } else {
@@ -1053,12 +1504,12 @@
 
 	            if (ElementWatcher.escapeNode.indexOf(this.base.pastDOMInformation.nodeName.toLowerCase()) > -1) return;
 	            if (this.renderInf.shouldRenderHtml) {
-	                this.childWatchers = [new this.BaseWatcher(this.base.element, this.base.obdata, null, this.BaseWatcher.TextWatcher, this.base.modelExtractId)];
+	                this.childWatchers = [new this.BaseWatcher(this.base.element, this.base.obdata, null, this.BaseWatcher.TextWatcher, this.base.modelExtractId, this.base.components, this.base)];
 	            } else {
 	                (function () {
 	                    var previousWatcher = null;
 	                    _this10.childWatchers = (0, _utilityFunc.toArray)(_this10.base.element.childNodes).map(function (item) {
-	                        var childWatcher = new _this10.BaseWatcher(item, _this10.base.obdata, previousWatcher, null, _this10.base.modelExtractId);
+	                        var childWatcher = new _this10.BaseWatcher(item, _this10.base.obdata, previousWatcher, null, _this10.base.modelExtractId, _this10.base.components, _this10.base);
 	                        previousWatcher = childWatcher;
 	                        return childWatcher;
 	                    });
@@ -1153,7 +1604,7 @@
 	exports.default = ElementWatcher;
 
 /***/ },
-/* 5 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1175,76 +1626,7 @@
 	}
 
 /***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.default = statementExtract;
-	var normalStatement = { start: '{{', end: '}}' };
-	var onceStatement = { start: '{{{', end: '}}}' };
-	var statementStart = '{';
-	var statementEnd = '}';
-	var marksExp = /['"]/;
-	var statementType = exports.statementType = ['normalStatement', 'onceStatement', 'constString'];
-
-	function statementExtract(str) {
-	    var len = str.length;
-	    var resolvedVector = [];
-	    var stack = [];
-	    var marksStack = [];
-	    var i = -1,
-	        p = 0;
-	    while (++i < len) {
-	        var char = str[i];
-	        if (char === statementStart && marksStack.length === 0) {
-	            while (i < len && str[i] === statementStart) {
-	                stack.push(char);
-	                i++;
-	            }
-	            i--;
-	            if (stack.join('') === normalStatement.start || stack.join('') === onceStatement.start) {
-	                if (resolvedVector[p]) p++;
-	            } else {
-	                throw str + '\u6A21\u7248\u8BED\u53E5\u4E2D' + str.slice(i - 3, i + 3) + '\u8BED\u6CD5\u9519\u8BEF';
-	            }
-	        } else if (char === statementEnd && marksStack.length === 0) {
-	            while (i < len && str[i] === statementEnd) {
-	                stack.pop();
-	                i++;
-	            }
-	            i--;
-	            if (stack.length !== 0) {
-	                throw str + '\u6A21\u7248\u8BED\u53E5\u4E2D' + str.slice(i - 3, i + 3) + '\u8BED\u6CD5\u9519\u8BEF';
-	            }
-	            p++;
-	        } else {
-	            if (!resolvedVector[p]) {
-	                resolvedVector[p] = {
-	                    type: stack.length === 0 ? statementType[2] : stack.length === 2 ? statementType[0] : statementType[1],
-	                    value: ''
-	                };
-	            }
-	            if (char.match(marksExp) && stack.length > 0) {
-	                if (marksStack.length > 0) {
-	                    if (str[i - 1] !== '\\') {
-	                        marksStack.pop();
-	                    }
-	                } else {
-	                    marksStack.push(char);
-	                }
-	            }
-	            resolvedVector[p].value += char;
-	        }
-	    }
-	    return resolvedVector;
-	}
-
-/***/ },
-/* 7 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1255,230 +1637,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _utilityFunc = __webpack_require__(2);
-
-	var _statementExtract = __webpack_require__(6);
-
-	var _Component = __webpack_require__(12);
-
-	var _Component2 = _interopRequireDefault(_Component);
-
-	var _modelSettlement = __webpack_require__(11);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var ComponentWatcher = function () {
-	    function ComponentWatcher(base, BaseWatcher) {
-	        _classCallCheck(this, ComponentWatcher);
-
-	        this.base = base;
-	        this.BaseWatcher = BaseWatcher;
-	        this.moudleId = (0, _utilityFunc.randomId)();
-	        this.instruction = this.__getInstruction();
-	        this.props = this.__getProps();
-	        this.component = this.__getComponent();
-	        this.model = this.__getModel();
-	        this.__remove();
-	    }
-
-	    _createClass(ComponentWatcher, [{
-	        key: 'render',
-	        value: function render() {
-	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-
-	            if (!this.component) return;
-	            this.child = this.__renderComponent();
-	            this.resolvedProps = this.__bindProps();
-	            this.data = (0, _utilityFunc.objectAssign)({}, this.component.data, this.resolvedProps);
-	            this.childWatcher = this.__setChildWatcher();
-	        }
-	    }, {
-	        key: 'reset',
-	        value: function reset() {
-	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-
-	            if (this.__getComponent() !== this.component) {
-	                this.childWatcher.forEach(function (item) {
-	                    item.base.element.parent.removeChild(item.base.element);
-	                });
-	                this.render(cb);
-	            } else {
-	                var oldProps = this.resolvedProps;
-	                var cbs = [];
-	                this.resolvedProps = this.__bindProps();
-	                for (var key in oldProps) {
-	                    if (oldProps[key] !== this.resolvedProps[key]) {
-	                        this.data[key] = this.resolvedProps[key];
-	                        cbs.push((0, _modelSettlement.get)(this.moudleId, key));
-	                    }
-	                }
-	                cbs.forEach(function (fns) {
-	                    fns.forEach(function (fn) {
-	                        fn();
-	                    });
-	                });
-	            }
-	        }
-	    }, {
-	        key: '__remove',
-	        value: function __remove() {
-	            var element = this.base.element;
-	            element.parentNode.removeChild(element);
-	        }
-	    }, {
-	        key: '__setChildWatcher',
-	        value: function __setChildWatcher() {
-	            var _this = this;
-
-	            var previous = null;
-	            return this.child.map(function (item) {
-	                return new _this.BaseWatcher(item, _this.data, previous, null, _this.moudleId, _this.component.components);
-	                previous = item;
-	            });
-	        }
-	    }, {
-	        key: '__bindProps',
-	        value: function __bindProps() {
-	            var _this2 = this;
-
-	            var props = {};
-	            this.props.normalProps.forEach(function (item) {
-	                props[item.name] = item.value[0].value;
-	            });
-	            this.props.obProps.forEach(function (prop) {
-	                var str = '';
-	                prop.value.forEach(function (item) {
-	                    if (item.type === _statementExtract.statementType[0] || item.type === _statementExtract.statementType[1]) str += _this2.base.execStatement(item.value);else str += item.value;
-	                });
-	                props[prop.name] = str;
-	            });
-	            return props;
-	        }
-	    }, {
-	        key: '__renderComponent',
-	        value: function __renderComponent() {
-	            if (!this.component) return;
-	            var frg = document.createDocumentFragment();
-	            var template = document.createElement('div');
-	            var parent = this.base.pastDOMInformation.parentNode;
-	            template.innerHTML = this.component.template;
-	            var child = (0, _utilityFunc.toArray)(template.childNodes);
-	            while (template.childNodes[0]) {
-	                frg.appendChild(template.childNodes[0]);
-	            }
-	            parent.insertBefore(frg, this.base.pastDOMInformation.nextSibling);
-	            return child;
-	        }
-	    }, {
-	        key: '__getComponent',
-	        value: function __getComponent() {
-	            var componentDataFrom = this.base.execStatement(this.instruction.value);
-	            var component = null;
-	            if (typeof componentDataFrom === 'string') {
-	                if (ComponentWatcher.components[componentDataFrom]) {
-	                    component = ComponentWatcher.components[componentDataFrom];
-	                } else if (this.base.components[componentDataFrom]) {
-	                    component = this.base.components[componentDataFrom];
-	                }
-	            } else if (componentDataFrom instanceof _Component2.default) {
-	                component = componentDataFrom;
-	            }
-	            return component;
-	        }
-	    }, {
-	        key: '__getInstruction',
-	        value: function __getInstruction() {
-	            return this.base.__filterAttr(ComponentWatcher.instructions, true)[0];
-	        }
-	    }, {
-	        key: '__getProps',
-	        value: function __getProps() {
-	            var _this3 = this;
-
-	            var props = this.base.__filterAttr(ComponentWatcher.instructions, false);
-	            var obProps = [],
-	                normalProps = [];
-	            props.forEach(function (prop) {
-	                var parsed = _this3.base.statementExtract(prop.value);
-	                var type = null,
-	                    ob = false;
-	                var obj = {};
-	                obj.name = prop.name;
-	                obj.value = parsed.map(function (item) {
-	                    if (item.type === _statementExtract.statementType[0] || item.type === _statementExtract.statementType[1]) {
-	                        ob = true;
-	                    }
-	                    return item;
-	                });
-	                if (ob === true) {
-	                    obProps.push(obj);
-	                } else {
-	                    normalProps.push(obj);
-	                }
-	            });
-	            return { obProps: obProps, normalProps: normalProps };
-	        }
-	    }, {
-	        key: '__getModel',
-	        value: function __getModel() {
-	            var instructionModel = this.__getInstructionsModel(),
-	                propsModel = this.__getPropsModel();
-	            return instructionModel.concat(propsModel);
-	        }
-	    }, {
-	        key: '__getInstructionsModel',
-	        value: function __getInstructionsModel() {
-	            var _this4 = this;
-
-	            var res = [];
-	            this.base.modelExtract(this.instruction.value).forEach(function (item) {
-	                res.push(item.value);
-	                _this4.instructionsModel[instruction.name] = item.value;
-	            });
-	            return res;
-	        }
-	    }, {
-	        key: '__getPropsModel',
-	        value: function __getPropsModel() {
-	            var _this5 = this;
-
-	            var res = [];
-	            this.props.obProps.forEach(function (prop) {
-	                prop.value.forEach(function (item) {
-	                    if (item.type === _statementExtract.statementType[0]) {
-	                        _this5.base.modelExtract(item.value).forEach(function (model) {
-	                            res.push(model.value);
-	                        });
-	                    }
-	                });
-	            });
-	            return res;
-	        }
-	    }]);
-
-	    return ComponentWatcher;
-	}();
-
-	ComponentWatcher.nodeNames = ['component'];
-	ComponentWatcher.instructions = ['data-from'];
-	ComponentWatcher.components = {};
-	exports.default = ComponentWatcher;
-
-/***/ },
-/* 8 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _statementExtract = __webpack_require__(6);
+	var _statementExtract = __webpack_require__(4);
 
 	var _utilityFunc = __webpack_require__(2);
 
@@ -1498,6 +1657,8 @@
 	    _createClass(TextWatcher, [{
 	        key: 'render',
 	        value: function render() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
 	            this.view = this.__parseView();
 	            if (this.watcherType === TextWatcher.textNodeWatcher) {
 	                this.base.set('textContent', this.view);
@@ -1507,8 +1668,12 @@
 	        }
 	    }, {
 	        key: 'reset',
-	        value: function reset(cb) {
-	            this.render(cb);
+	        value: function reset() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+	            var prevData = arguments[1];
+	            var nextData = arguments[2];
+
+	            if (prevData !== nextData) this.render(cb);
 	        }
 	    }, {
 	        key: '__getViewModel',
@@ -1533,8 +1698,9 @@
 	        value: function __parseView() {
 	            var _this2 = this;
 
-	            if (this.base.obdata.name === undefined) {
-	                console.log(this);
+	            if (this.vm.length === 1) {
+	                var data = this.vm[0];
+	                return data.type === _statementExtract.statementType[0] ? this.base.execStatement(data.value) : data.value;
 	            }
 	            return this.vm.reduce(function (prev, next) {
 	                var v1 = prev.type === _statementExtract.statementType[0] ? _this2.base.execStatement(prev.value) : prev.value,
@@ -1580,7 +1746,7 @@
 	exports.default = TextWatcher;
 
 /***/ },
-/* 9 */
+/* 11 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1609,7 +1775,7 @@
 	exports.default = TemplateWatcher;
 
 /***/ },
-/* 10 */
+/* 12 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1691,104 +1857,6 @@
 	}
 
 /***/ },
-/* 11 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-	exports.set = set;
-	exports.get = get;
-	exports.all = all;
-	var modelSettlement = {};
-	function set(modelExtractId, key, func) {
-	    if (typeof func !== 'function') throw 'func参数需要是一个函数';
-	    if (!modelSettlement[modelExtractId]) {
-	        modelSettlement[modelExtractId] = {};
-	    }
-	    var target = modelSettlement[modelExtractId];
-	    if (target[key]) {
-	        target[key].push(func);
-	    } else {
-	        target[key] = [func];
-	    }
-	}
-	function get(modelExtractId, key) {
-	    return modelSettlement[modelExtractId] && modelSettlement[modelExtractId][key] || null;
-	}
-	function all(modelExtractId) {
-	    return modelSettlement[modelExtractId];
-	}
-
-/***/ },
-/* 12 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _utilityFunc = __webpack_require__(2);
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var Component = function () {
-	    function Component() {
-	        var props = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
-
-	        _classCallCheck(this, Component);
-
-	        this.element = null;
-	        this.props = props;
-	        this.data = null;
-	        this.refs = null;
-	        this.template = null;
-	        this.modelId = (0, _utilityFunc.randomId)();
-	    }
-
-	    _createClass(Component, [{
-	        key: 'init',
-	        value: function init(element, props) {
-	            this.element = element;
-	            this.props = props;
-	        }
-	    }, {
-	        key: 'getRefs',
-	        value: function getRefs() {
-	            var refs = {};
-	            (0, _utilityFunc.walkElement)(this.element, function (element) {
-	                var ref = element.getAttribute('ref');
-	                ref && (refs[ref.name] = element);
-	            });
-	        }
-	    }, {
-	        key: 'setProps',
-	        value: function setProps(props) {
-	            this.props = props;
-	        }
-	    }, {
-	        key: 'didMount',
-	        value: function didMount() {}
-	    }, {
-	        key: 'propsUpdate',
-	        value: function propsUpdate(prevProps, nextProps) {}
-	    }, {
-	        key: 'shouldUpdate',
-	        value: function shouldUpdate(prevProps, nextProps) {}
-	    }]);
-
-	    return Component;
-	}();
-
-	exports.default = Component;
-
-/***/ },
 /* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
@@ -1802,13 +1870,13 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _BaseWatcher = __webpack_require__(1);
+	var _BaseWatcher = __webpack_require__(6);
 
 	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _modelSettlement = __webpack_require__(11);
+	var _modelSettlement = __webpack_require__(5);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1836,12 +1904,12 @@
 	    }, {
 	        key: 'set',
 	        value: function set() {
+	            var _arguments = arguments;
+
 	            var cbs = [];
 	            if (arguments.length === 2) {
 	                var key = arguments[0],
 	                    val = arguments[1];
-	                this.data[key] = val;
-	                this.watcher.set(key, val);
 	                cbs.push((0, _modelSettlement.get)(this.modelId, key));
 	            } else {
 	                if (_typeof(arguments[0]) !== 'object') {
@@ -1849,15 +1917,14 @@
 	                } else {
 	                    var dataObj = arguments[0];
 	                    for (var _key in dataObj) {
-	                        this.data[_key] = dataObj[_key];
-	                        this.watcher.set(_key, dataObj[_key]);
 	                        cbs.push((0, _modelSettlement.get)(this.modelId, _key));
 	                    }
 	                }
 	            }
-	            cbs.forEach(function (fns) {
-	                fns && fns.forEach(function (fn) {
-	                    fn();
+	            cbs.forEach(function (watchers) {
+	                watchers && watchers.forEach(function (watcher) {
+	                    watcher.setObData.apply(watcher, [function () {}].concat(Array.prototype.slice.call(_arguments)));
+	                    // fn();
 	                });
 	            });
 	        }

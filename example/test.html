@@ -9,18 +9,35 @@
         }
     </style>
 </head>
-<body>
-    <div onclick="{{ reverseMsg() }}">
-        {{ msg }}
-    </div>
+<body> 
+    <component data-from="'Seller'" datas="{{ datas }}" icon="{{ icon }}"></component>
+    <button onclick="{{ changeSeller() }}">change Seller</button>
+    <button onclick="{{ changeIcon() }}">change Icon</button>
     <script src="../index.js"></script>
     <script>
-        var app = Observer.watch(document.getElementsByTagName('div')[0], {
-            msg: 'hello world',
-            reverseMsg: function() {
-                app.set('msg', this.msg.split('').reverse().join(''));
+        var app = Observer.watch(document.body, {
+            datas: ['100', '200', '300'],
+            icon: '$$',
+            changeSeller: function() {
+                app.set('datas', [1, 3 ,5]);
+            },
+            changeIcon: function() {
+                app.set('icon', '$');
             }
         });
+        var Seller = Observer.createComponent({
+            data: {
+                name: 'lc'
+            },
+            didMount() {
+                console.log(this.refs.ul)
+            },
+            didUpdate(prev, next) {
+                console.log(prev, next)
+            },
+            template: '<ul ref="ul"><li data-each="data in datas"> {{ name }} : <span>{{ data }}</span>{{ icon }}</li></ul>'
+        });
+        Observer.registerComponent('Seller', Seller);
     </script>
 </body>
 </html>

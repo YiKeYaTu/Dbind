@@ -11,7 +11,7 @@ export default class TextWatcher {
         this.model = this.__parseModel();
         this.view = null;
     }
-    render() {
+    render(cb = () => {}) {
         this.view = this.__parseView();
         if(this.watcherType === TextWatcher.textNodeWatcher) {
             this.base.set('textContent', this.view);
@@ -19,8 +19,9 @@ export default class TextWatcher {
             this.base.set('innerHTML', this.view);
         }
     }
-    reset(cb) {
-        this.render(cb);
+    reset(cb = () => {}, prevData, nextData) {
+        if(prevData !== nextData)
+            this.render(cb);
     }
     __getViewModel() {
         return this.__replaceOnceStatement(this.base.statementExtract(
@@ -38,8 +39,9 @@ export default class TextWatcher {
     }
 
     __parseView() {
-        if(this.base.obdata.name === undefined) {
-            console.log(this)
+        if(this.vm.length === 1) {
+            let data = this.vm[0];
+            return (data.type === statementType[0] ? this.base.execStatement(data.value) : data.value);
         }
         return this.vm.reduce((prev, next) => {
             const v1 = (prev.type === statementType[0] ? this.base.execStatement(prev.value) : prev.value),

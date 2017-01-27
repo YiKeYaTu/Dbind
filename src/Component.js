@@ -1,28 +1,23 @@
-import { randomId, walkElement } from './utilityFunc';
+import { walkElement } from './utilityFunc';
 export default class Component {
-    constructor(props = null) {
+    constructor() {
         this.element = null;
-        this.props = props;
-        this.data = null;
         this.refs = null;
         this.template = null;
-        this.modelId = randomId();
     }
-    init(element, props) {
+    init(element, data) {
         this.element = element;
-        this.props = props;
+        this.__setRefs();
     }
-    getRefs() {
+    __setRefs() {
         const refs = {};
         walkElement(this.element, (element) => {
             const ref = element.getAttribute('ref');
-            ref && (refs[ref.name] = element);
+            ref && (refs[ref] = element);
         });
-    }
-    setProps(props) {
-        this.props = props;
+        this.refs = refs;
     }
     didMount() {}
-    propsUpdate(prevProps, nextProps) {}
-    shouldUpdate(prevProps, nextProps) {}
+    didUpdate(prevData, nextData) {}
+    shouldUpdate(prevData, nextData) {}
 }

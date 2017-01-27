@@ -1,15 +1,16 @@
+import BaseWatcher from './BaseWatcher';
 const modelSettlement = {};
-export function set(modelExtractId, key, func) {
-    if(typeof func !== 'function')
-        throw 'func参数需要是一个函数';
+export function set(modelExtractId, key, watcher) {
+    if(!(watcher instanceof BaseWatcher))
+        throw new TypeError();
     if(!modelSettlement[modelExtractId]) {
         modelSettlement[modelExtractId] = {};
     }
     const target = modelSettlement[modelExtractId];
     if(target[key]) {
-        target[key].push(func);
+        target[key].push(watcher);
     } else {
-        target[key] = [func];
+        target[key] = [watcher];
     }
 }
 export function get(modelExtractId, key) {

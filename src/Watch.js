@@ -24,8 +24,6 @@ export default class Watch {
         if(arguments.length === 2) {
             const key = arguments[0],
                   val = arguments[1];
-            this.data[key] = val;
-            this.watcher.set(key, val);
             cbs.push(get(this.modelId, key));
         } else {
             if(typeof arguments[0] !== 'object') {
@@ -33,15 +31,14 @@ export default class Watch {
             } else {
                 const dataObj = arguments[0];
                 for(let key in dataObj) {
-                    this.data[key] = dataObj[key];
-                    this.watcher.set(key, dataObj[key]);
                     cbs.push(get(this.modelId, key));
                 }
             }
         }
-        cbs.forEach((fns) => {
-            fns && fns.forEach((fn) => {
-                fn();
+        cbs.forEach((watchers) => {
+            watchers && watchers.forEach((watcher) => {
+                watcher.setObData(() => {}, ...arguments);
+                // fn();
             });
         });
     }

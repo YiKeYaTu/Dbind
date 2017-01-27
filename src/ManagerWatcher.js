@@ -19,7 +19,7 @@ export default class ManagerWatcher {
     }
     reset(cb = () => {}) {
         this.childWacther.forEach((item) => {
-            const node = item.base.element;
+            const node = item.element;
             node.parentNode.removeChild(node);
         });
         this.render();
@@ -30,9 +30,13 @@ export default class ManagerWatcher {
         this.childWacther.forEach((item) => {
             frg.appendChild(item[0]);
         });
-        next.parentNode.insertBefore(frg, next);
-        this.childWacther = this.childWacther.forEach((item) => {
-            return new this.BaseWatcher(item[0], item[1], item[2], item[3], item[4]);
+        if(next) {
+            next.parentNode.insertBefore(frg, next);
+        } else {
+            this.base.pastDOMInformation.parentNode.appendChild(frg);
+        }
+        this.childWacther = this.childWacther.map((item) => {
+            return new this.BaseWatcher(...item);
         });
     }
     __check() {
@@ -45,7 +49,7 @@ export default class ManagerWatcher {
         const vector = (new Function('data', `with(data) { return ${(this.model && this.model[0]) || this.vector} }`)(this.base.obdata));
         if(is(vector, 'array')) {
             return vector.map((item, index) => {
-                const obdata = objectAssign({}, this.base.obdata);
+                let obdata = objectAssign({}, this.base.obdata);
                 obdata[this.parameter[0]] = item;
                 this.parameter[1] && (obdata[this.parameter[1]] = index);
                 this.parameter[2] && (obdata[this.parameter[2]] = index);
@@ -54,14 +58,16 @@ export default class ManagerWatcher {
                     obdata,
                     this.base.previous,
                     null, 
-                    this.base.modelExtractId
+                    this.base.modelExtractId,
+                    this.base.components,
+                    this.base,
                 ];
             });
         } else if(is(vector, 'object')) {
             const child = [];
-            const obdata = objectAssign({}, this.base.obdata);
             let i = 0;
             for(let key in vector) {
+                let obdata = objectAssign({}, this.base.obdata);
                 obdata[this.parameter[0]] = vector[key];
                 this.parameter[1] && (obdata[this.parameter[1]] = key);
                 this.parameter[2] && (obdata[this.parameter[2]] = i);
@@ -70,7 +76,9 @@ export default class ManagerWatcher {
                     obdata,
                     this.base.previous,
                     null,
-                    this.base.modelExtractId
+                    this.base.modelExtractId,
+                    this.base.components,
+                    this.base
                 ]);
                 i ++;
             }

@@ -1,4 +1,4 @@
-import { toArray, deepClone } from './utilityFunc';
+import { toArray, deepClone, randomId, objectAssign } from './utilityFunc';
 
 import ManagerWatcher from './ManagerWatcher';
 import ElementWatcher from './ElementWatcher';
@@ -33,17 +33,17 @@ export default class BaseWatcher {
      * 
      * @memberOf BaseWatcher
      */
-    constructor(element, obdata, previous = null, forceWatcherType = null, modelExtractId = null, components = null) {
+    constructor(element, obdata, previous = null, forceWatcherType = null, modelExtractId = null, components = null, parentWatcher = null) {
         this.element = element;
         this.components = components;
-        this.previousObdata = null;
+        this.parentWatcher = parentWatcher;
         this.obdata = obdata;
         this.previous = previous;
         this.rendering = false;
         this.pastDOMInformation = this.__getPastDOMInformation();
+        this.modelExtractId = this.__getModelExtractId(modelExtractId);
         this.obtype = this.__getType(forceWatcherType);
         this.obwatcher = this.__getWatcher();
-        this.modelExtractId = modelExtractId || this.obwatcher.modelId;
         this.__hangonModel(this.modelExtractId);
 
         this.render();
@@ -51,14 +51,41 @@ export default class BaseWatcher {
     render(cb = () => {}, func = 'render') {
         this.obwatcher.render();
     }
-    reset(cb = () => {}) {
+    reset(cb = () => {}, prevData, nextData) {
         if(this.rendering !== true) {
             this.__setRendering(true);
             delay((time) => {
-                this.obwatcher.reset();
+                this.obwatcher.reset(cb, prevData, nextData);
                 cb(time);
                 this.__setRendering(false);
             });
+        }
+    }
+    setObData(cb = () => {}) {
+        const prevData = objectAssign({}, this.obdata);
+        const nextData = objectAssign({}, this.obdata);
+        if(arguments.length === 3) {
+            const key = arguments[1],
+                  val = arguments[2];
+            nextData[key] = val;
+        } else {
+            if(typeof arguments[1] !== 'object') {
+                throw '';
+            } else {
+                const dataObj = arguments[1];
+                for(let key in dataObj) {
+                    nextData[key] = dataObj[key];
+                }
+            }
+        }
+        this.obdata = nextData;
+        this.reset(cb, prevData, nextData);
+    }
+    __getModelExtractId(modelExtractId) {
+        if(this.obtype === BaseWatcher.ComponentWatcher) {
+            return randomId();
+        } else {
+            return modelExtractId;
         }
     }
     __setRendering(rendering) {
@@ -179,7 +206,7 @@ export default class BaseWatcher {
         const model = this.obwatcher.model;
         if(model) {
             model.forEach((item) => {
-                set(this.modelExtractId, item, this.obwatcher.reset.bind(this.obwatcher));
+                set(this.modelExtractId, item, this);
             });
         }
     }
@@ -233,6 +260,6 @@ export default class BaseWatcher {
         return statementExtract(str);
     }
     execStatement(statement) {
-        return (new Function('data', `with(data) { return ${statement};}`))(this.obdata);
+        return (new Function('data', `with(data) { return ${statement};}`)).call(this.obdata, this.obdata);
     }
 }

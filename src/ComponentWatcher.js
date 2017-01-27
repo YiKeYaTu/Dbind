@@ -1,4 +1,4 @@
-import { toArray, randomId, objectAssign } from './utilityFunc';
+import { toArray, objectAssign } from './utilityFunc';
 import { statementType } from './statementExtract';
 import Component from './Component';
 import { all, get } from './modelSettlement';
@@ -9,7 +9,7 @@ export default class ComponentWatcher {
     constructor(base, BaseWatcher) {
         this.base = base;
         this.BaseWatcher = BaseWatcher;
-        this.moudleId = randomId();
+        this.moudleId = this.base.modelExtractId;
         this.instruction = this.__getInstruction();
         this.props = this.__getProps();
         this.component = this.__getComponent();
@@ -19,11 +19,13 @@ export default class ComponentWatcher {
     render(cb = () => {}) {
         if(!this.component) return; 
         this.child = this.__renderComponent();
+        this.component.init(this.child);
+        this.component.didMount();
         this.resolvedProps = this.__bindProps();
         this.data = objectAssign({}, this.component.data, this.resolvedProps);
         this.childWatcher = this.__setChildWatcher();
     }
-    reset(cb = () => {}) {
+    reset(cb = () => {}, prevData, nextData) {
         if(this.__getComponent() !== this.component) {
             this.childWatcher.forEach((item) => {
                 item.base.element.parent.removeChild(item.base.element);
@@ -33,6 +35,7 @@ export default class ComponentWatcher {
             const oldProps = this.resolvedProps;
             const cbs = [];
             this.resolvedProps = this.__bindProps();
+            this.component.didUpdate(oldProps, this.resolvedProps);
             for(let key in oldProps) {
                 if(oldProps[key] !== this.resolvedProps[key]) {
                     this.data[key] = this.resolvedProps[key]
@@ -59,7 +62,8 @@ export default class ComponentWatcher {
                 previous,
                 null,
                 this.moudleId,
-                this.component.components
+                this.component.components,
+                this.base
             );
             previous = item;
         });
@@ -70,12 +74,21 @@ export default class ComponentWatcher {
             props[item.name] = item.value[0].value;
         });
         this.props.obProps.forEach((prop) => {
-            let str = '';
+            let str = null;
             prop.value.forEach((item) => {
-                if(item.type === statementType[0] || item.type === statementType[1])
-                    str += this.base.execStatement(item.value);
-                else 
-                    str += item.value;
+                if(item.type === statementType[0] || item.type === statementType[1]) {
+                    if(str === null) {
+                        str = this.base.parentWatcher.execStatement(item.value);
+                    } else {
+                        str += this.base.parentWatcher.execStatement(item.value);
+                    } 
+                } else { 
+                    if(str === null) {
+                        str = item.value;
+                    } else {
+                        str += item.value;
+                    } 
+                }
             });
             props[prop.name] = str;
         });
@@ -143,7 +156,6 @@ export default class ComponentWatcher {
         const res = [];
         this.base.modelExtract(this.instruction.value).forEach((item) => {
             res.push(item.value);
-            this.instructionsModel[instruction.name] = item.value;
         });
         return res;
     }
