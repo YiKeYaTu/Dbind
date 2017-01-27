@@ -139,7 +139,7 @@
 	        value: function __setRefs() {
 	            var refs = {};
 	            (0, _utilityFunc.walkElement)(this.element, function (element) {
-	                var ref = element.getAttribute('ref');
+	                var ref = element.getAttribute && element.getAttribute('ref');
 	                ref && (refs[ref] = element);
 	            });
 	            this.refs = refs;
@@ -266,7 +266,7 @@
 
 	        this.base = base;
 	        this.BaseWatcher = BaseWatcher;
-	        this.moudleId = this.base.modelExtractId;
+	        this.moudleId = (0, _utilityFunc.randomId)();
 	        this.instruction = this.__getInstruction();
 	        this.props = this.__getProps();
 	        this.component = this.__getComponent();
@@ -291,6 +291,9 @@
 	        key: 'reset',
 	        value: function reset() {
 	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+	            var _this = this;
+
 	            var prevData = arguments[1];
 	            var nextData = arguments[2];
 
@@ -310,9 +313,9 @@
 	                        cbs.push((0, _modelSettlement.get)(this.moudleId, key));
 	                    }
 	                }
-	                cbs.forEach(function (fns) {
-	                    fns.forEach(function (fn) {
-	                        fn();
+	                cbs.forEach(function (watchers) {
+	                    watchers && watchers.forEach(function (watcher) {
+	                        watcher.setObData(cb = function cb() {}, _this.resolvedProps);
 	                    });
 	                });
 	            }
@@ -326,18 +329,18 @@
 	    }, {
 	        key: '__setChildWatcher',
 	        value: function __setChildWatcher() {
-	            var _this = this;
+	            var _this2 = this;
 
 	            var previous = null;
 	            return this.child.map(function (item) {
-	                return new _this.BaseWatcher(item, _this.data, previous, null, _this.moudleId, _this.component.components, _this.base);
+	                return new _this2.BaseWatcher(item, _this2.data, previous, null, _this2.moudleId, _this2.component.components, _this2.base);
 	                previous = item;
 	            });
 	        }
 	    }, {
 	        key: '__bindProps',
 	        value: function __bindProps() {
-	            var _this2 = this;
+	            var _this3 = this;
 
 	            var props = {};
 	            this.props.normalProps.forEach(function (item) {
@@ -348,9 +351,9 @@
 	                prop.value.forEach(function (item) {
 	                    if (item.type === _statementExtract.statementType[0] || item.type === _statementExtract.statementType[1]) {
 	                        if (str === null) {
-	                            str = _this2.base.parentWatcher.execStatement(item.value);
+	                            str = _this3.base.execStatement(item.value);
 	                        } else {
-	                            str += _this2.base.parentWatcher.execStatement(item.value);
+	                            str += _this3.base.execStatement(item.value);
 	                        }
 	                    } else {
 	                        if (str === null) {
@@ -403,17 +406,19 @@
 	    }, {
 	        key: '__getProps',
 	        value: function __getProps() {
-	            var _this3 = this;
+	            var _this4 = this;
 
 	            var props = this.base.__filterAttr(ComponentWatcher.instructions, false);
 	            var obProps = [],
 	                normalProps = [];
 	            props.forEach(function (prop) {
-	                var parsed = _this3.base.statementExtract(prop.value);
+	                var parsed = _this4.base.statementExtract(prop.value);
 	                var type = null,
 	                    ob = false;
 	                var obj = {};
-	                obj.name = prop.name;
+	                obj.name = prop.name.replace(/-(.)/, function (a, b) {
+	                    return String.fromCharCode(b.charCodeAt(0) - 32);
+	                });
 	                obj.value = parsed.map(function (item) {
 	                    if (item.type === _statementExtract.statementType[0] || item.type === _statementExtract.statementType[1]) {
 	                        ob = true;
@@ -447,13 +452,13 @@
 	    }, {
 	        key: '__getPropsModel',
 	        value: function __getPropsModel() {
-	            var _this4 = this;
+	            var _this5 = this;
 
 	            var res = [];
 	            this.props.obProps.forEach(function (prop) {
 	                prop.value.forEach(function (item) {
 	                    if (item.type === _statementExtract.statementType[0]) {
-	                        _this4.base.modelExtract(item.value).forEach(function (model) {
+	                        _this5.base.modelExtract(item.value).forEach(function (model) {
 	                            res.push(model.value);
 	                        });
 	                    }
@@ -660,8 +665,8 @@
 	        this.obdata = obdata;
 	        this.previous = previous;
 	        this.rendering = false;
+	        this.modelExtractId = modelExtractId;
 	        this.pastDOMInformation = this.__getPastDOMInformation();
-	        this.modelExtractId = this.__getModelExtractId(modelExtractId);
 	        this.obtype = this.__getType(forceWatcherType);
 	        this.obwatcher = this.__getWatcher();
 	        this.__hangonModel(this.modelExtractId);
@@ -719,15 +724,6 @@
 	            }
 	            this.obdata = nextData;
 	            this.reset(cb, prevData, nextData);
-	        }
-	    }, {
-	        key: '__getModelExtractId',
-	        value: function __getModelExtractId(modelExtractId) {
-	            if (this.obtype === BaseWatcher.ComponentWatcher) {
-	                return (0, _utilityFunc.randomId)();
-	            } else {
-	                return modelExtractId;
-	            }
 	        }
 	    }, {
 	        key: '__setRendering',

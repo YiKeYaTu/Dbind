@@ -12,7 +12,7 @@ export default class Component {
     __setRefs() {
         const refs = {};
         walkElement(this.element, (element) => {
-            const ref = element.getAttribute('ref');
+            const ref = element.getAttribute && element.getAttribute('ref');
             ref && (refs[ref] = element);
         });
         this.refs = refs;

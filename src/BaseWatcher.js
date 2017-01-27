@@ -40,8 +40,8 @@ export default class BaseWatcher {
         this.obdata = obdata;
         this.previous = previous;
         this.rendering = false;
+        this.modelExtractId = modelExtractId;
         this.pastDOMInformation = this.__getPastDOMInformation();
-        this.modelExtractId = this.__getModelExtractId(modelExtractId);
         this.obtype = this.__getType(forceWatcherType);
         this.obwatcher = this.__getWatcher();
         this.__hangonModel(this.modelExtractId);
@@ -80,13 +80,6 @@ export default class BaseWatcher {
         }
         this.obdata = nextData;
         this.reset(cb, prevData, nextData);
-    }
-    __getModelExtractId(modelExtractId) {
-        if(this.obtype === BaseWatcher.ComponentWatcher) {
-            return randomId();
-        } else {
-            return modelExtractId;
-        }
     }
     __setRendering(rendering) {
         this.rendering = rendering;

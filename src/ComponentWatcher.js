@@ -1,4 +1,4 @@
-import { toArray, objectAssign } from './utilityFunc';
+import { toArray, objectAssign, randomId } from './utilityFunc';
 import { statementType } from './statementExtract';
 import Component from './Component';
 import { all, get } from './modelSettlement';
@@ -9,7 +9,7 @@ export default class ComponentWatcher {
     constructor(base, BaseWatcher) {
         this.base = base;
         this.BaseWatcher = BaseWatcher;
-        this.moudleId = this.base.modelExtractId;
+        this.moudleId = randomId();
         this.instruction = this.__getInstruction();
         this.props = this.__getProps();
         this.component = this.__getComponent();
@@ -42,9 +42,9 @@ export default class ComponentWatcher {
                     cbs.push(get(this.moudleId, key));
                 }
             }
-            cbs.forEach((fns) => {
-                fns.forEach((fn) => {
-                    fn();
+            cbs.forEach((watchers) => {
+                watchers && watchers.forEach((watcher) => {
+                    watcher.setObData(cb = () => {}, this.resolvedProps);
                 })
             })
         }
@@ -78,9 +78,9 @@ export default class ComponentWatcher {
             prop.value.forEach((item) => {
                 if(item.type === statementType[0] || item.type === statementType[1]) {
                     if(str === null) {
-                        str = this.base.parentWatcher.execStatement(item.value);
+                        str = this.base.execStatement(item.value);
                     } else {
-                        str += this.base.parentWatcher.execStatement(item.value);
+                        str += this.base.execStatement(item.value);
                     } 
                 } else { 
                     if(str === null) {
@@ -132,7 +132,9 @@ export default class ComponentWatcher {
             let parsed = this.base.statementExtract(prop.value);
             let type = null, ob = false;
             let obj = {};
-            obj.name = prop.name;
+            obj.name = prop.name.replace(/-(.)/, (a, b) => {
+                return String.fromCharCode(b.charCodeAt(0) - 32);
+            });
             obj.value = parsed.map((item) => {
                 if(item.type === statementType[0] || item.type === statementType[1]) {
                     ob = true;
