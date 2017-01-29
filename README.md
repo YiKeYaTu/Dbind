@@ -31,7 +31,13 @@
 
 - 该框架并没有用到虚拟dom来优化性能，而是使用了不同的思想来减少dom的操作
 - Observer的watch方法在首次载入时会遍历传入的dom，并为每一个dom节点绑定一个watcher
-- 每个watcher会提取出该dom的model，例如<div data-if="a > b"></div>这里会提取出a，b并且分别以a，b为键将该watcher的reset方法放入一个全局的对象当中
+- 每个watcher会提取出该dom的model，例如
+
+````html
+    <div data-if="a > b"></div>
+````
+
+- 这里会提取出a，b并且分别以a，b为键将该watcher的reset方法放入一个全局的对象当中
 - 当触发trackingUpdate方法的时候，watcher将会取出重设的键的所有reset函数并且一一执行
 
 # 指令
