@@ -43,6 +43,9 @@ export default class Component {
         this.refs = refs;
     }
     didMount() {}
-    didUpdate(prevData, nextData) {}
-    shouldUpdate(prevData, nextData) {}
+    willMount() {}
+    willUpdate() {}
+    shouldUpdate() {
+        return true;
+    }
 }

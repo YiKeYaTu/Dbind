@@ -16,6 +16,7 @@
         datas="{{ datas }}" 
         icon="{{ icon }}" 
         hahas="{{ hahas }}"
+        msg="{{ datas.toString() }}"
         change-seller="{{ changeSeller.bind(this) }}" 
         change-icon="{{ changeIcon }}"
     ></component>
@@ -54,18 +55,21 @@
                     Seller.trackingUpdate(() => {}, 'name', 'casles');
                 }
             },
-            didMount() {
-                setInterval(() => {
-                    Seller.trackingUpdate(() => {}, 'name', this.data.name + Math.random());
-                });
+            willMount() {
+                this.data.name = 'casacss';
             },
-            didUpdate(prev, next) {
+            didMount() {
+                
+            },
+            willUpdate(prev, next) {
+
             },
             template: `
                 <ul ref="ul">
                     <li data-each="i in datas"> 
-                        {{ name }} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i] }}
+                        {{ name.toUpperCase()}} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i] }}
                     </li>
+                    <input type="text" value="{{ msg.toUpperCase() }}"></input>
                 </ul>
                 <button onclick="{{ chgName() }}"></button>
                 <component 

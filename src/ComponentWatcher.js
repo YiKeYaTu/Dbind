@@ -21,9 +21,10 @@ export default class ComponentWatcher {
         this.child = this.__renderComponent();
         this.resolvedProps = this.__bindProps();
         this.component.init(this.base, this.child, this.resolvedProps);
-        this.component.didMount();
-        this.data = objectAssign({}, this.component.data, this.resolvedProps);
+        this.component.willMount();
+        this.data = objectAssign({}, this.component.props, this.component.data);
         this.childWatcher = this.__setChildWatcher();
+        this.component.didMount();
     }
     reset(cb = () => {}, prevData, nextData) {
         if(this.__getComponent() !== this.component) {
@@ -35,12 +36,15 @@ export default class ComponentWatcher {
             const oldProps = this.resolvedProps;
             const resetWatcherList = [];
             this.resolvedProps = this.__bindProps();
+            if(!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
+                return;
+            }
             this.component.setProps(this.resolvedProps);
-            this.component.didUpdate(oldProps, this.resolvedProps);
+            this.component.willUpdate(oldProps, this.resolvedProps);
             for(let key in oldProps) {
-                if(oldProps[key] !== this.resolvedProps[key]) {
+                if(oldProps[key] !== this.component.props[key]) {
                     let cb = get(this.modelExtractId, key);
-                    this.data[key] = this.resolvedProps[key];
+                    this.data[key] = this.component.props[key];
                     cb && resetWatcherList.push(cb);
                 }
             }

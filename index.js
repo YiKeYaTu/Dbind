@@ -181,11 +181,16 @@
 	        key: 'didMount',
 	        value: function didMount() {}
 	    }, {
-	        key: 'didUpdate',
-	        value: function didUpdate(prevData, nextData) {}
+	        key: 'willMount',
+	        value: function willMount() {}
+	    }, {
+	        key: 'willUpdate',
+	        value: function willUpdate() {}
 	    }, {
 	        key: 'shouldUpdate',
-	        value: function shouldUpdate(prevData, nextData) {}
+	        value: function shouldUpdate() {
+	            return true;
+	        }
 	    }]);
 
 	    return Component;
@@ -316,9 +321,10 @@
 	            this.child = this.__renderComponent();
 	            this.resolvedProps = this.__bindProps();
 	            this.component.init(this.base, this.child, this.resolvedProps);
-	            this.component.didMount();
-	            this.data = (0, _utilityFunc.objectAssign)({}, this.component.data, this.resolvedProps);
+	            this.component.willMount();
+	            this.data = (0, _utilityFunc.objectAssign)({}, this.component.props, this.component.data);
 	            this.childWatcher = this.__setChildWatcher();
+	            this.component.didMount();
 	        }
 	    }, {
 	        key: 'reset',
@@ -339,12 +345,15 @@
 	                var oldProps = this.resolvedProps;
 	                var resetWatcherList = [];
 	                this.resolvedProps = this.__bindProps();
+	                if (!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
+	                    return;
+	                }
 	                this.component.setProps(this.resolvedProps);
-	                this.component.didUpdate(oldProps, this.resolvedProps);
+	                this.component.willUpdate(oldProps, this.resolvedProps);
 	                for (var key in oldProps) {
-	                    if (oldProps[key] !== this.resolvedProps[key]) {
+	                    if (oldProps[key] !== this.component.props[key]) {
 	                        var _cb = (0, _modelSettlement.get)(this.modelExtractId, key);
-	                        this.data[key] = this.resolvedProps[key];
+	                        this.data[key] = this.component.props[key];
 	                        _cb && resetWatcherList.push(_cb);
 	                    }
 	                }
