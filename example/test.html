@@ -10,10 +10,12 @@
     </style>
 </head>
 <body> 
+    <button onclick="{{ changeHahas() }}"></button>
     <component 
         data-from="'Seller'" 
         datas="{{ datas }}" 
         icon="{{ icon }}" 
+        hahas="{{ hahas }}"
         change-seller="{{ changeSeller.bind(this) }}" 
         change-icon="{{ changeIcon }}"
     ></component>
@@ -21,16 +23,26 @@
     <script>
         var app = Observer.watch(document.body, {
             datas: ['100', '200', '300'],
+            hahas: ['gege', 'lc', '2121221'],
             icon: '$$',
             changeSeller: function() {
-                app.set('datas', this.datas.map((item) => item * 10 ));
+                app.watcher.trackingUpdate(() => {}, 'datas', [122, 333, 122])
             },
             changeIcon: function() {
                 app.set('icon', '$');
+            },
+            changeHahas: function() {
+                app.set('hahas', [1,2]);
             }
         });
         var button = Observer.createComponent({
+            data: {
+                world: '<p>hh</p>',
+            },
             template: `
+                <div data-html>
+                    {{ world }}
+                </div>
                 <button onclick="{{ changeSeller() }}">change Seller</button>
                 <button onclick="{{ changeIcon() }}">change Icon</button>
             `
@@ -46,9 +58,9 @@
 
             },
             template: `
-                <ul ref="ul"}}>
-                    <li data-each="data in datas"> 
-                        {{ name }} : <span>{{ data }}</span>{{ icon }}
+                <ul ref="ul">
+                    <li data-each="i in datas"> 
+                        {{ name }} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i] }}
                     </li>
                 </ul>
                 <component 

@@ -1,6 +1,7 @@
-import { events, on } from './event';
+import { events, on } from './Event';
 import { deepClone, toArray } from './utilityFunc'
 import { statementType } from './statementExtract';
+import { objectAssign } from './utilityFunc';
 
 /**
  * 
@@ -20,6 +21,7 @@ export default class ElementWatcher {
     constructor(base, BaseWatcher) {
         this.base = base;
         this.BaseWatcher = BaseWatcher;
+        this.__setObIdAttr();
         this.instructions = this.__getInstructions();
         this.instructionsList = this.instructions.map(item => item.name);
         this.instructionsModel = null;
@@ -71,6 +73,9 @@ export default class ElementWatcher {
     }
     __setBaseElementDisplay(display) {
         this.base.element.style.display = display;
+    }
+    __setObIdAttr() {
+        this.base.element.setAttribute('data-ob-id', this.base.obId);
     }
     /**
      * 
@@ -291,25 +296,26 @@ export default class ElementWatcher {
         if(this.renderInf.shouldRenderHtml) {
             this.childWatchers = [new this.BaseWatcher(
                 this.base.element,
-                this.base.obdata,
+                objectAssign({}, this.base.obdata),
                 null,
                 this.BaseWatcher.TextWatcher,
                 this.base.modelExtractId,
                 this.base.components,
-                this.base
+                this.base,
             )];
         } else {
             let previousWatcher = null;
             this.childWatchers = toArray(this.base.element.childNodes)
-                .map((item) => {
+                .map((item, index) => {
                     const childWatcher = new this.BaseWatcher(
                         item, 
-                        this.base.obdata, 
+                        objectAssign({}, this.base.obdata), 
                         previousWatcher,
                         null,
                         this.base.modelExtractId,
                         this.base.components,
-                        this.base
+                        this.base,
+                        this.base.getChildId(index)
                     );
                     previousWatcher = childWatcher;
                     return childWatcher;
@@ -346,11 +352,7 @@ export default class ElementWatcher {
      * @memberOf ElementWatcher
      */
     __handleIfInstruction(resolvedInstruction, renderInf) {
-        let shouldRender = null;
-        if(resolvedInstruction) shouldRender = true;
-        else shouldRender = false;
-        renderInf.shouldRender = shouldRender;
-        return shouldRender;
+        return resolvedInstruction;
     }
     __handleElseIfInstruction(resolvedInstruction, renderInf) {
         let f1 = this.__handleIfInstruction(resolvedInstruction, renderInf), 

@@ -1,4 +1,5 @@
 import { is, objectAssign } from './utilityFunc';
+import { all } from './modelSettlement';
 export default class ManagerWatcher {
     static instructions = ['data-each'];
     static eachSplitInstructionChar = 'in';
@@ -17,12 +18,14 @@ export default class ManagerWatcher {
         this.childWacther = this.__setChildWatcher();
         this.__appendChildWatcherToDOM();
     }
-    reset(cb = () => {}) {
-        this.childWacther.forEach((item) => {
-            const node = item.element;
-            node.parentNode.removeChild(node);
-        });
-        this.render();
+    reset(cb = () => {}, prevData, nextData) {
+        if(prevData[this.vector].length !== prevData[this.vector].length) {
+            this.childWacther.forEach((item) => {
+                const node = item.element;
+                node.parentNode.removeChild(node);
+            });
+            this.render();
+        }
     }
     __appendChildWatcherToDOM() {
         const frg = document.createDocumentFragment(),
@@ -46,13 +49,12 @@ export default class ManagerWatcher {
         }
     }
     __setChildWatcher() {
-        const vector = (new Function('data', `with(data) { return ${(this.model && this.model[0]) || this.vector} }`)(this.base.obdata));
+        const vector = (new Function('data', `with(data) { return ${this.vector} }`)(this.base.obdata));
         if(is(vector, 'array')) {
             return vector.map((item, index) => {
                 let obdata = objectAssign({}, this.base.obdata);
-                obdata[this.parameter[0]] = item;
+                obdata[this.parameter[0]] = index;
                 this.parameter[1] && (obdata[this.parameter[1]] = index);
-                this.parameter[2] && (obdata[this.parameter[2]] = index);
                 return [
                     this.__cloneElement(this.base.element.innerHTML),
                     obdata,
@@ -61,6 +63,7 @@ export default class ManagerWatcher {
                     this.base.modelExtractId,
                     this.base.components,
                     this.base,
+                    this.base.obId + `.${index}`,
                 ];
             });
         } else if(is(vector, 'object')) {
@@ -68,9 +71,8 @@ export default class ManagerWatcher {
             let i = 0;
             for(let key in vector) {
                 let obdata = objectAssign({}, this.base.obdata);
-                obdata[this.parameter[0]] = vector[key];
-                this.parameter[1] && (obdata[this.parameter[1]] = key);
-                this.parameter[2] && (obdata[this.parameter[2]] = i);
+                obdata[this.parameter[0]] = key;
+                this.parameter[1] && (obdata[this.parameter[1]] = i);
                 child.push([
                     this.__cloneElement(this.base.element.innerHTML),
                     obdata,
@@ -78,7 +80,8 @@ export default class ManagerWatcher {
                     null,
                     this.base.modelExtractId,
                     this.base.components,
-                    this.base
+                    this.base,
+                    this.base.getChildId(i)
                 ]);
                 i ++;
             }
@@ -102,7 +105,7 @@ export default class ManagerWatcher {
             flag && res.push(item.value);
             if(item.value === ManagerWatcher.eachSplitInstructionChar) { 
                 flag = true;
-                this.vector = this.instruction.value.slice(item.index + ManagerWatcher.eachSplitInstructionChar.length);
+                this.vector = this.instruction.value.slice(item.index + ManagerWatcher.eachSplitInstructionChar.length).replace(/\s/g, '');
             };
         });
         return res.length > 0 ? res : null;

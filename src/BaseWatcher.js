@@ -9,7 +9,7 @@ import TemplateWatcher from './TemplateWatcher';
 import modelExtract from './modelExtract';
 import statementExtract from './statementExtract';
 
-import { set } from './modelSettlement';
+import { set, get } from './modelSettlement';
 
 import { delay } from './utilityFunc';
 /**
@@ -33,7 +33,8 @@ export default class BaseWatcher {
      * 
      * @memberOf BaseWatcher
      */
-    constructor(element, obdata, previous = null, forceWatcherType = null, modelExtractId = null, components = null, parentWatcher = null) {
+    constructor(element, obdata, previous = null, forceWatcherType = null, modelExtractId = null, components = null, parentWatcher = null, obId = 0) {
+        this.obId = obId;
         this.element = element;
         this.components = components;
         this.parentWatcher = parentWatcher;
@@ -48,22 +49,16 @@ export default class BaseWatcher {
 
         this.render();
     }
-    render(cb = () => {}, func = 'render') {
-        this.obwatcher.render();
+    render(cb = () => {}) {
+        this.obwatcher.render(cb);
     }
-    reset(cb = () => {}, prevData, nextData) {
-        if(this.rendering !== true) {
-            this.__setRendering(true);
-            delay((time) => {
-                this.obwatcher.reset(cb, prevData, nextData);
-                cb(time);
-                this.__setRendering(false);
-            });
+    reset(cb = () => {}) {
+        if(this.rendering === true) {
+            return;
         }
-    }
-    setObData(cb = () => {}) {
         const prevData = objectAssign({}, this.obdata);
         const nextData = objectAssign({}, this.obdata);
+        this.__setRendering(true);
         if(arguments.length === 3) {
             const key = arguments[1],
                   val = arguments[2];
@@ -79,7 +74,25 @@ export default class BaseWatcher {
             }
         }
         this.obdata = nextData;
-        this.reset(cb, prevData, nextData);
+        delay((time) => {
+            this.obwatcher.reset(cb, prevData, nextData);
+            cb(time);
+            this.__setRendering(false);
+        });
+    }
+    trackingUpdate(cb = () => {}) {
+        const resetWatcherList = [];
+        const target = arguments[1];
+        if(typeof target === 'object') {
+            for(let key in target) {
+                resetWatcherList.push(get(this.modelExtractId, key));
+            }
+        } else {
+            resetWatcherList.push(get(this.modelExtractId, target));
+        }
+        resetWatcherList.forEach((items) => {
+            items && items.forEach(item => item.reset(...arguments));
+        })
     }
     __setRendering(rendering) {
         this.rendering = rendering;
@@ -203,19 +216,12 @@ export default class BaseWatcher {
             });
         }
     }
+    getChildId(i) {
+        return `${this.obId}.${i}`;
+    }
     removeAttr(name) {
         this.element.removeAttribute(name);
     }
-    /**
-     * 
-     * 
-     * @param {any} val
-     * 
-     * @memberOf BaseWatcher
-     */
-    set(name, val) {
-        this.element[name] = val;
-    } 
     /**
      * 
      * 

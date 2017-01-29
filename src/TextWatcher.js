@@ -1,4 +1,5 @@
 import { statementType } from './statementExtract';
+import TextWatcherStatementToString from './TextWatcherStatementToString';
 import { toArray } from './utilityFunc';
 
 export default class TextWatcher {
@@ -14,9 +15,9 @@ export default class TextWatcher {
     render(cb = () => {}) {
         this.view = this.__parseView();
         if(this.watcherType === TextWatcher.textNodeWatcher) {
-            this.base.set('textContent', this.view);
+            this.base.element.textContent = this.view;
         } else {
-            this.base.set('innerHTML', this.view);
+            this.base.element.innerHTML = this.view;
         }
     }
     reset(cb = () => {}, prevData, nextData) {
@@ -24,9 +25,8 @@ export default class TextWatcher {
             this.render(cb);
     }
     __getViewModel() {
-        return this.__replaceOnceStatement(this.base.statementExtract(
-            this.watcherType === TextWatcher.textNodeWatcher ? this.base.pastDOMInformation.textContent : this.base.pastDOMInformation.innerHTML
-        )); 
+        let content = this.watcherType === TextWatcher.textNodeWatcher ? this.base.pastDOMInformation.textContent : this.base.pastDOMInformation.innerHTML;
+        return this.__replaceOnceStatement(this.base.statementExtract(content)); 
     }
     __replaceOnceStatement(statementList) {
         return statementList.map((item) => {
@@ -37,7 +37,6 @@ export default class TextWatcher {
             return item;
         })
     }
-
     __parseView() {
         if(this.vm.length === 1) {
             let data = this.vm[0];
@@ -50,15 +49,7 @@ export default class TextWatcher {
         }).value;
     }
     __toString(val) {
-        if(val instanceof HTMLElement) {
-            const nodeName = val.nodeName.toLowerCase();
-            const attrs = toArray(val.attributes).map((item) => {
-                return `${item.name}='${item.value}'`;
-            }).join('\s');
-            return `<${nodeName} ${attrs}>${val.innerHTML}</${nodeName}>`;
-        } else {
-            return val;
-        }
+        return TextWatcherStatementToString(val);
     }
     __parseModel() {
         const res = [];

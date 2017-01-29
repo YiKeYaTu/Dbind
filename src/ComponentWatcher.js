@@ -9,7 +9,7 @@ export default class ComponentWatcher {
     constructor(base, BaseWatcher) {
         this.base = base;
         this.BaseWatcher = BaseWatcher;
-        this.moudleId = randomId();
+        this.modelExtractId = randomId();
         this.instruction = this.__getInstruction();
         this.props = this.__getProps();
         this.component = this.__getComponent();
@@ -33,19 +33,20 @@ export default class ComponentWatcher {
             this.render(cb);
         } else {
             const oldProps = this.resolvedProps;
-            const cbs = [];
+            const resetWatcherList = [];
             this.resolvedProps = this.__bindProps();
             this.component.didUpdate(oldProps, this.resolvedProps);
             for(let key in oldProps) {
                 if(oldProps[key] !== this.resolvedProps[key]) {
-                    this.data[key] = this.resolvedProps[key]
-                    cbs.push(get(this.moudleId, key));
+                    let cb = get(this.modelExtractId, key);
+                    this.data[key] = this.resolvedProps[key];
+                    cb && resetWatcherList.push(cb);
                 }
             }
-            cbs.forEach((watchers) => {
-                watchers && watchers.forEach((watcher) => {
-                    watcher.setObData(cb = () => {}, this.resolvedProps);
-                })
+            resetWatcherList.forEach((items) => {
+                items && items.forEach((item) => {
+                    item.reset(cb = () => {}, this.resolvedProps);
+                });
             })
         }
     }
@@ -55,15 +56,16 @@ export default class ComponentWatcher {
     }
     __setChildWatcher() {
         let previous = null;
-        return this.child.map((item) => {
+        return this.child.map((item, index) => {
             return new this.BaseWatcher(
                 item,
-                this.data,
+                objectAssign({}, this.data),
                 previous,
                 null,
-                this.moudleId,
+                this.modelExtractId,
                 this.component.components,
-                this.base
+                this.base,
+                this.base.getChildId(index)
             );
             previous = item;
         });

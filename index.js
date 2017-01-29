@@ -56,7 +56,7 @@
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _Watch = __webpack_require__(13);
+	var _Watch = __webpack_require__(14);
 
 	var _Watch2 = _interopRequireDefault(_Watch);
 
@@ -266,7 +266,7 @@
 
 	        this.base = base;
 	        this.BaseWatcher = BaseWatcher;
-	        this.moudleId = (0, _utilityFunc.randomId)();
+	        this.modelExtractId = (0, _utilityFunc.randomId)();
 	        this.instruction = this.__getInstruction();
 	        this.props = this.__getProps();
 	        this.component = this.__getComponent();
@@ -304,18 +304,19 @@
 	                this.render(cb);
 	            } else {
 	                var oldProps = this.resolvedProps;
-	                var cbs = [];
+	                var resetWatcherList = [];
 	                this.resolvedProps = this.__bindProps();
 	                this.component.didUpdate(oldProps, this.resolvedProps);
 	                for (var key in oldProps) {
 	                    if (oldProps[key] !== this.resolvedProps[key]) {
+	                        var _cb = (0, _modelSettlement.get)(this.modelExtractId, key);
 	                        this.data[key] = this.resolvedProps[key];
-	                        cbs.push((0, _modelSettlement.get)(this.moudleId, key));
+	                        _cb && resetWatcherList.push(_cb);
 	                    }
 	                }
-	                cbs.forEach(function (watchers) {
-	                    watchers && watchers.forEach(function (watcher) {
-	                        watcher.setObData(cb = function cb() {}, _this.resolvedProps);
+	                resetWatcherList.forEach(function (items) {
+	                    items && items.forEach(function (item) {
+	                        item.reset(cb = function cb() {}, _this.resolvedProps);
 	                    });
 	                });
 	            }
@@ -332,8 +333,8 @@
 	            var _this2 = this;
 
 	            var previous = null;
-	            return this.child.map(function (item) {
-	                return new _this2.BaseWatcher(item, _this2.data, previous, null, _this2.moudleId, _this2.component.components, _this2.base);
+	            return this.child.map(function (item, index) {
+	                return new _this2.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this2.data), previous, null, _this2.modelExtractId, _this2.component.components, _this2.base, _this2.base.getChildId(index));
 	                previous = item;
 	            });
 	        }
@@ -616,11 +617,11 @@
 
 	var _TextWatcher2 = _interopRequireDefault(_TextWatcher);
 
-	var _TemplateWatcher = __webpack_require__(11);
+	var _TemplateWatcher = __webpack_require__(12);
 
 	var _TemplateWatcher2 = _interopRequireDefault(_TemplateWatcher);
 
-	var _modelExtract2 = __webpack_require__(12);
+	var _modelExtract2 = __webpack_require__(13);
 
 	var _modelExtract3 = _interopRequireDefault(_modelExtract2);
 
@@ -656,9 +657,11 @@
 	        var modelExtractId = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : null;
 	        var components = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : null;
 	        var parentWatcher = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : null;
+	        var obId = arguments.length > 7 && arguments[7] !== undefined ? arguments[7] : 0;
 
 	        _classCallCheck(this, BaseWatcher);
 
+	        this.obId = obId;
 	        this.element = element;
 	        this.components = components;
 	        this.parentWatcher = parentWatcher;
@@ -678,36 +681,22 @@
 	        key: 'render',
 	        value: function render() {
 	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-	            var func = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 'render';
 
-	            this.obwatcher.render();
+	            this.obwatcher.render(cb);
 	        }
 	    }, {
 	        key: 'reset',
 	        value: function reset() {
-	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-
 	            var _this = this;
 
-	            var prevData = arguments[1];
-	            var nextData = arguments[2];
-
-	            if (this.rendering !== true) {
-	                this.__setRendering(true);
-	                (0, _utilityFunc.delay)(function (time) {
-	                    _this.obwatcher.reset(cb, prevData, nextData);
-	                    cb(time);
-	                    _this.__setRendering(false);
-	                });
-	            }
-	        }
-	    }, {
-	        key: 'setObData',
-	        value: function setObData() {
 	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
 
+	            if (this.rendering === true) {
+	                return;
+	            }
 	            var prevData = (0, _utilityFunc.objectAssign)({}, this.obdata);
 	            var nextData = (0, _utilityFunc.objectAssign)({}, this.obdata);
+	            this.__setRendering(true);
 	            if (arguments.length === 3) {
 	                var key = arguments[1],
 	                    val = arguments[2];
@@ -723,7 +712,32 @@
 	                }
 	            }
 	            this.obdata = nextData;
-	            this.reset(cb, prevData, nextData);
+	            (0, _utilityFunc.delay)(function (time) {
+	                _this.obwatcher.reset(cb, prevData, nextData);
+	                cb(time);
+	                _this.__setRendering(false);
+	            });
+	        }
+	    }, {
+	        key: 'trackingUpdate',
+	        value: function trackingUpdate() {
+	            var _arguments = arguments;
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+	            var resetWatcherList = [];
+	            var target = arguments[1];
+	            if ((typeof target === 'undefined' ? 'undefined' : _typeof(target)) === 'object') {
+	                for (var key in target) {
+	                    resetWatcherList.push((0, _modelSettlement.get)(this.modelExtractId, key));
+	                }
+	            } else {
+	                resetWatcherList.push((0, _modelSettlement.get)(this.modelExtractId, target));
+	            }
+	            resetWatcherList.forEach(function (items) {
+	                items && items.forEach(function (item) {
+	                    return item.reset.apply(item, _arguments);
+	                });
+	            });
 	        }
 	    }, {
 	        key: '__setRendering',
@@ -875,22 +889,14 @@
 	            }
 	        }
 	    }, {
+	        key: 'getChildId',
+	        value: function getChildId(i) {
+	            return this.obId + '.' + i;
+	        }
+	    }, {
 	        key: 'removeAttr',
 	        value: function removeAttr(name) {
 	            this.element.removeAttribute(name);
-	        }
-	        /**
-	         * 
-	         * 
-	         * @param {any} val
-	         * 
-	         * @memberOf BaseWatcher
-	         */
-
-	    }, {
-	        key: 'set',
-	        value: function set(name, val) {
-	            this.element[name] = val;
 	        }
 	        /**
 	         * 
@@ -968,6 +974,8 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
+	var _modelSettlement = __webpack_require__(5);
+
 	function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -999,12 +1007,16 @@
 	        key: 'reset',
 	        value: function reset() {
 	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+	            var prevData = arguments[1];
+	            var nextData = arguments[2];
 
-	            this.childWacther.forEach(function (item) {
-	                var node = item.element;
-	                node.parentNode.removeChild(node);
-	            });
-	            this.render();
+	            if (prevData[this.vector].length !== prevData[this.vector].length) {
+	                this.childWacther.forEach(function (item) {
+	                    var node = item.element;
+	                    node.parentNode.removeChild(node);
+	                });
+	                this.render();
+	            }
 	        }
 	    }, {
 	        key: '__appendChildWatcherToDOM',
@@ -1038,24 +1050,22 @@
 	        value: function __setChildWatcher() {
 	            var _this2 = this;
 
-	            var vector = new Function('data', 'with(data) { return ' + (this.model && this.model[0] || this.vector) + ' }')(this.base.obdata);
+	            var vector = new Function('data', 'with(data) { return ' + this.vector + ' }')(this.base.obdata);
 	            if ((0, _utilityFunc.is)(vector, 'array')) {
 	                return vector.map(function (item, index) {
 	                    var obdata = (0, _utilityFunc.objectAssign)({}, _this2.base.obdata);
-	                    obdata[_this2.parameter[0]] = item;
+	                    obdata[_this2.parameter[0]] = index;
 	                    _this2.parameter[1] && (obdata[_this2.parameter[1]] = index);
-	                    _this2.parameter[2] && (obdata[_this2.parameter[2]] = index);
-	                    return [_this2.__cloneElement(_this2.base.element.innerHTML), obdata, _this2.base.previous, null, _this2.base.modelExtractId, _this2.base.components, _this2.base];
+	                    return [_this2.__cloneElement(_this2.base.element.innerHTML), obdata, _this2.base.previous, null, _this2.base.modelExtractId, _this2.base.components, _this2.base, _this2.base.obId + ('.' + index)];
 	                });
 	            } else if ((0, _utilityFunc.is)(vector, 'object')) {
 	                var child = [];
 	                var i = 0;
 	                for (var key in vector) {
 	                    var obdata = (0, _utilityFunc.objectAssign)({}, this.base.obdata);
-	                    obdata[this.parameter[0]] = vector[key];
-	                    this.parameter[1] && (obdata[this.parameter[1]] = key);
-	                    this.parameter[2] && (obdata[this.parameter[2]] = i);
-	                    child.push([this.__cloneElement(this.base.element.innerHTML), obdata, this.base.previous, null, this.base.modelExtractId, this.base.components, this.base]);
+	                    obdata[this.parameter[0]] = key;
+	                    this.parameter[1] && (obdata[this.parameter[1]] = i);
+	                    child.push([this.__cloneElement(this.base.element.innerHTML), obdata, this.base.previous, null, this.base.modelExtractId, this.base.components, this.base, this.base.getChildId(i)]);
 	                    i++;
 	                }
 	                return child;
@@ -1088,7 +1098,7 @@
 	                flag && res.push(item.value);
 	                if (item.value === ManagerWatcher.eachSplitInstructionChar) {
 	                    flag = true;
-	                    _this3.vector = _this3.instruction.value.slice(item.index + ManagerWatcher.eachSplitInstructionChar.length);
+	                    _this3.vector = _this3.instruction.value.slice(item.index + ManagerWatcher.eachSplitInstructionChar.length).replace(/\s/g, '');
 	                };
 	            });
 	            return res.length > 0 ? res : null;
@@ -1135,7 +1145,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _event = __webpack_require__(9);
+	var _Event = __webpack_require__(9);
 
 	var _utilityFunc = __webpack_require__(2);
 
@@ -1157,6 +1167,7 @@
 
 	        this.base = base;
 	        this.BaseWatcher = BaseWatcher;
+	        this.__setObIdAttr();
 	        this.instructions = this.__getInstructions();
 	        this.instructionsList = this.instructions.map(function (item) {
 	            return item.name;
@@ -1224,6 +1235,11 @@
 	        key: '__setBaseElementDisplay',
 	        value: function __setBaseElementDisplay(display) {
 	            this.base.element.style.display = display;
+	        }
+	    }, {
+	        key: '__setObIdAttr',
+	        value: function __setObIdAttr() {
+	            this.base.element.setAttribute('data-ob-id', this.base.obId);
 	        }
 	        /**
 	         * 
@@ -1370,7 +1386,7 @@
 	        value: function __getAttrs() {
 	            var _this5 = this;
 
-	            var attrs = this.base.__filterAttr(_event.events.concat(ElementWatcher.instructions), false);
+	            var attrs = this.base.__filterAttr(_Event.events.concat(ElementWatcher.instructions), false);
 	            var obattrs = [],
 	                normalAttrs = [];
 	            attrs.forEach(function (attr) {
@@ -1406,7 +1422,7 @@
 	        value: function __getEvents() {
 	            var _this6 = this;
 
-	            var eventAttrs = this.base.__filterAttr(_event.events);
+	            var eventAttrs = this.base.__filterAttr(_Event.events);
 	            var obEvents = [],
 	                onceEvents = [],
 	                normalEvents = [];
@@ -1448,7 +1464,7 @@
 	                item.forEach(function (item) {
 	                    _this7.base.element[item.name] = null;
 	                    _this7.base.removeAttr(item.name);
-	                    (0, _event.on)(_this7.base.element, item.name.substring(2), function ($event) {
+	                    (0, _Event.on)(_this7.base.element, item.name.substring(2), function ($event) {
 	                        new Function('data, $event', 'with(data) { ' + item.value + ' }')(obdata, $event);
 	                    });
 	                });
@@ -1500,12 +1516,12 @@
 
 	            if (ElementWatcher.escapeNode.indexOf(this.base.pastDOMInformation.nodeName.toLowerCase()) > -1) return;
 	            if (this.renderInf.shouldRenderHtml) {
-	                this.childWatchers = [new this.BaseWatcher(this.base.element, this.base.obdata, null, this.BaseWatcher.TextWatcher, this.base.modelExtractId, this.base.components, this.base)];
+	                this.childWatchers = [new this.BaseWatcher(this.base.element, (0, _utilityFunc.objectAssign)({}, this.base.obdata), null, this.BaseWatcher.TextWatcher, this.base.modelExtractId, this.base.components, this.base)];
 	            } else {
 	                (function () {
 	                    var previousWatcher = null;
-	                    _this10.childWatchers = (0, _utilityFunc.toArray)(_this10.base.element.childNodes).map(function (item) {
-	                        var childWatcher = new _this10.BaseWatcher(item, _this10.base.obdata, previousWatcher, null, _this10.base.modelExtractId, _this10.base.components, _this10.base);
+	                    _this10.childWatchers = (0, _utilityFunc.toArray)(_this10.base.element.childNodes).map(function (item, index) {
+	                        var childWatcher = new _this10.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this10.base.obdata), previousWatcher, null, _this10.base.modelExtractId, _this10.base.components, _this10.base, _this10.base.getChildId(index));
 	                        previousWatcher = childWatcher;
 	                        return childWatcher;
 	                    });
@@ -1548,10 +1564,7 @@
 	    }, {
 	        key: '__handleIfInstruction',
 	        value: function __handleIfInstruction(resolvedInstruction, renderInf) {
-	            var shouldRender = null;
-	            if (resolvedInstruction) shouldRender = true;else shouldRender = false;
-	            renderInf.shouldRender = shouldRender;
-	            return shouldRender;
+	            return resolvedInstruction;
 	        }
 	    }, {
 	        key: '__handleElseIfInstruction',
@@ -1606,19 +1619,57 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	    value: true
+	  value: true
 	});
 	exports.on = on;
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 	var events = exports.events = ['onafterprint', 'onbeforeprint', 'onbeforeunload', 'onerror', 'onhaschange', 'onload', 'onmessage', 'onoffline', 'ononline', 'onpagehide', 'onpageshow', 'onpopstate', 'onredo', 'onresize', 'onstorage', 'onundo', 'onunload', 'onblur', 'onchange', 'oncontextmenu', 'onfocus', 'onformchange', 'onforminput', 'oninvalid', 'onreset', 'onselect', 'onsubmit', 'onkeydown', 'onkeypress', 'onkeyup', 'onclick', 'ondblclick', 'ondrag', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onmousedown', 'onmousemove', 'onmouseout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onscroll', 'onabort', 'oncanplay', 'oncanplaythrough', 'ondurationchange', 'onemptied', 'onended', 'onerror', 'onloadeddata', 'onloadedmetadata', 'onloadstart', 'onpause', 'onplay', 'onplaying', 'onprogress', 'onratechange', 'onreadystatechange', 'onseeked', 'onseeking', 'onstalled', 'onsuspend', 'ontimeupdate', 'onvolumechange', 'onwaiting'];
 
+	var eventPool = {};
+
+	var _loop = function _loop(i, len) {
+	  var eventName = events[i].slice(2);
+	  bindEvent(document, eventName, function (event) {
+	    var dom = event.target;
+	    var obId = getObId(dom);
+	    var eventHandles = eventPool[obId] && eventPool[obId][eventName];
+	    eventHandles && eventHandles.map(function (eventHandle) {
+	      return eventHandle(event);
+	    });
+	  });
+	};
+
+	for (var i = 0, len = events.length; i < len; i++) {
+	  _loop(i, len);
+	}
+
+	function bindEvent(dom, eventType, eventHandle) {
+	  if (dom.addEventListener) {
+	    dom.addEventListener(eventType, eventHandle);
+	  } else if (dom.attachEvent) {
+	    dom.attachEvent('on' + eventType, eventHandle);
+	  } else {
+	    dom['on' + eventType] = eventHandle;
+	  }
+	}
+
+	function getObId(dom) {
+	  return dom.dataset && dom.dataset.obId;;
+	}
+
 	function on(dom, eventType, eventHandle) {
-	    if (dom.addEventListener) {
-	        dom.addEventListener(eventType, eventHandle);
-	    } else if (dom.attachEvent) {
-	        dom.attachEvent('on' + eventType, eventHandle);
+	  var obId = getObId(dom);
+	  if (!eventPool[obId]) {
+	    eventPool[obId] = _defineProperty({}, eventType, [eventHandle]);
+	  } else {
+	    if (eventPool[obId][eventType]) {
+	      eventPool[obId][eventType].push(eventHandle);
 	    } else {
-	        dom['on' + eventType] = eventHandle;
+	      eventPool[obId][eventType] = [eventHandle];
 	    }
+	  }
 	}
 
 /***/ },
@@ -1635,7 +1686,13 @@
 
 	var _statementExtract = __webpack_require__(4);
 
+	var _TextWatcherStatementToString = __webpack_require__(11);
+
+	var _TextWatcherStatementToString2 = _interopRequireDefault(_TextWatcherStatementToString);
+
 	var _utilityFunc = __webpack_require__(2);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -1657,9 +1714,9 @@
 
 	            this.view = this.__parseView();
 	            if (this.watcherType === TextWatcher.textNodeWatcher) {
-	                this.base.set('textContent', this.view);
+	                this.base.element.textContent = this.view;
 	            } else {
-	                this.base.set('innerHTML', this.view);
+	                this.base.element.innerHTML = this.view;
 	            }
 	        }
 	    }, {
@@ -1674,7 +1731,8 @@
 	    }, {
 	        key: '__getViewModel',
 	        value: function __getViewModel() {
-	            return this.__replaceOnceStatement(this.base.statementExtract(this.watcherType === TextWatcher.textNodeWatcher ? this.base.pastDOMInformation.textContent : this.base.pastDOMInformation.innerHTML));
+	            var content = this.watcherType === TextWatcher.textNodeWatcher ? this.base.pastDOMInformation.textContent : this.base.pastDOMInformation.innerHTML;
+	            return this.__replaceOnceStatement(this.base.statementExtract(content));
 	        }
 	    }, {
 	        key: '__replaceOnceStatement',
@@ -1707,15 +1765,7 @@
 	    }, {
 	        key: '__toString',
 	        value: function __toString(val) {
-	            if (val instanceof HTMLElement) {
-	                var nodeName = val.nodeName.toLowerCase();
-	                var attrs = (0, _utilityFunc.toArray)(val.attributes).map(function (item) {
-	                    return item.name + '=\'' + item.value + '\'';
-	                }).join('\s');
-	                return '<' + nodeName + ' ' + attrs + '>' + val.innerHTML + '</' + nodeName + '>';
-	            } else {
-	                return val;
-	            }
+	            return (0, _TextWatcherStatementToString2.default)(val);
 	        }
 	    }, {
 	        key: '__parseModel',
@@ -1745,6 +1795,35 @@
 /* 11 */
 /***/ function(module, exports) {
 
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	    value: true
+	});
+
+	exports.default = function (val) {
+	    if (val instanceof HTMLElement) {
+	        return handleDOMValue(val);
+	    } else {
+	        return handleTextValue(val);
+	    }
+	};
+
+	function handleDOMValue(DOM) {
+	    var nodeName = DOM.nodeName.toLowerCase();
+	    var attrs = toArray(DOM.attributes).map(function (item) {
+	        return item.name + '=\'' + item.value + '\'';
+	    }).join('\s');
+	    return '<' + nodeName + ' ' + attrs + '>' + DOM.innerHTML + '</' + nodeName + '>';
+	}
+	function handleTextValue(text) {
+	    return text;
+	}
+
+/***/ },
+/* 12 */
+/***/ function(module, exports) {
+
 	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
@@ -1771,7 +1850,7 @@
 	exports.default = TemplateWatcher;
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1853,7 +1932,7 @@
 	}
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1861,8 +1940,6 @@
 	Object.defineProperty(exports, "__esModule", {
 	    value: true
 	});
-
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -1897,33 +1974,30 @@
 	                _this.watcher = new _BaseWatcher2.default(_this.DOM, _this.data, null, null, _this.modelId);
 	            });
 	        }
-	    }, {
-	        key: 'set',
-	        value: function set() {
-	            var _arguments = arguments;
+	        // set() {
+	        //     const cbs = [];
+	        //     if(arguments.length === 2) {
+	        //         const key = arguments[0],
+	        //               val = arguments[1];
+	        //         cbs.push(get(this.modelId, key));
+	        //     } else {
+	        //         if(typeof arguments[0] !== 'object') {
+	        //             throw '';
+	        //         } else {
+	        //             const dataObj = arguments[0];
+	        //             for(let key in dataObj) {
+	        //                 cbs.push(get(this.modelId, key));
+	        //             }
+	        //         }
+	        //     }
+	        //     cbs.forEach((watchers) => {
+	        //         watchers && watchers.forEach((watcher) => {
+	        //             watcher.setData(() => {}, ...arguments);
+	        //             // fn();
+	        //         });
+	        //     });
+	        // }
 
-	            var cbs = [];
-	            if (arguments.length === 2) {
-	                var key = arguments[0],
-	                    val = arguments[1];
-	                cbs.push((0, _modelSettlement.get)(this.modelId, key));
-	            } else {
-	                if (_typeof(arguments[0]) !== 'object') {
-	                    throw '';
-	                } else {
-	                    var dataObj = arguments[0];
-	                    for (var _key in dataObj) {
-	                        cbs.push((0, _modelSettlement.get)(this.modelId, _key));
-	                    }
-	                }
-	            }
-	            cbs.forEach(function (watchers) {
-	                watchers && watchers.forEach(function (watcher) {
-	                    watcher.setObData.apply(watcher, [function () {}].concat(Array.prototype.slice.call(_arguments)));
-	                    // fn();
-	                });
-	            });
-	        }
 	    }]);
 
 	    return Watch;
