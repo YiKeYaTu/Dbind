@@ -19,7 +19,7 @@ export default class ManagerWatcher {
         this.__appendChildWatcherToDOM();
     }
     reset(cb = () => {}, prevData, nextData) {
-        if(prevData[this.vector].length !== prevData[this.vector].length) {
+        if(prevData[this.vector].length !== nextData[this.vector].length) {
             this.childWacther.forEach((item) => {
                 const node = item.element;
                 node.parentNode.removeChild(node);

@@ -113,6 +113,8 @@
 	    value: true
 	});
 
+	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
+
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _utilityFunc = __webpack_require__(2);
@@ -123,16 +125,47 @@
 	    function Component() {
 	        _classCallCheck(this, Component);
 
+	        this.watcher = null;
 	        this.element = null;
 	        this.refs = null;
 	        this.template = null;
+	        this.props = null;
 	    }
 
 	    _createClass(Component, [{
 	        key: 'init',
-	        value: function init(element, data) {
+	        value: function init(watcher, element, props) {
+	            this.watcher = watcher;
 	            this.element = element;
+	            this.props = props;
 	            this.__setRefs();
+	        }
+	    }, {
+	        key: 'trackingUpdate',
+	        value: function trackingUpdate() {
+	            var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+	            var prevData = (0, _utilityFunc.objectAssign)({}, this.data);
+	            if (arguments.length === 3) {
+	                var key = arguments[1],
+	                    val = arguments[2];
+	                this.data[key] = val;
+	            } else {
+	                if (_typeof(arguments[1]) !== 'object') {
+	                    throw '';
+	                } else {
+	                    var dataObj = arguments[1];
+	                    for (var _key in dataObj) {
+	                        this.data[_key] = dataObj[_key];
+	                    }
+	                }
+	            }
+	            this.watcher.obwatcher.reset(cb, prevData, this.data);
+	        }
+	    }, {
+	        key: 'setProps',
+	        value: function setProps(props) {
+	            this.props = props;
 	        }
 	    }, {
 	        key: '__setRefs',
@@ -281,9 +314,9 @@
 
 	            if (!this.component) return;
 	            this.child = this.__renderComponent();
-	            this.component.init(this.child);
-	            this.component.didMount();
 	            this.resolvedProps = this.__bindProps();
+	            this.component.init(this.base, this.child, this.resolvedProps);
+	            this.component.didMount();
 	            this.data = (0, _utilityFunc.objectAssign)({}, this.component.data, this.resolvedProps);
 	            this.childWatcher = this.__setChildWatcher();
 	        }
@@ -306,6 +339,7 @@
 	                var oldProps = this.resolvedProps;
 	                var resetWatcherList = [];
 	                this.resolvedProps = this.__bindProps();
+	                this.component.setProps(this.resolvedProps);
 	                this.component.didUpdate(oldProps, this.resolvedProps);
 	                for (var key in oldProps) {
 	                    if (oldProps[key] !== this.resolvedProps[key]) {
@@ -314,9 +348,16 @@
 	                        _cb && resetWatcherList.push(_cb);
 	                    }
 	                }
+	                for (var _key in this.component.data) {
+	                    if (this.component.data[_key] !== this.data[_key]) {
+	                        var _cb2 = (0, _modelSettlement.get)(this.modelExtractId, _key);
+	                        this.data[_key] = this.component.data[_key];
+	                        _cb2 && resetWatcherList.push(_cb2);
+	                    }
+	                }
 	                resetWatcherList.forEach(function (items) {
 	                    items && items.forEach(function (item) {
-	                        item.reset(cb = function cb() {}, _this.resolvedProps);
+	                        item.reset(cb = function cb() {}, _this.data);
 	                    });
 	                });
 	            }
@@ -1010,7 +1051,7 @@
 	            var prevData = arguments[1];
 	            var nextData = arguments[2];
 
-	            if (prevData[this.vector].length !== prevData[this.vector].length) {
+	            if (prevData[this.vector].length !== nextData[this.vector].length) {
 	                this.childWacther.forEach(function (item) {
 	                    var node = item.element;
 	                    node.parentNode.removeChild(node);

@@ -26,7 +26,7 @@
             hahas: ['gege', 'lc', '2121221'],
             icon: '$$',
             changeSeller: function() {
-                app.watcher.trackingUpdate(() => {}, 'datas', [122, 333, 122])
+                app.watcher.trackingUpdate(() => {}, 'datas', [122, 333, 1221, 444])
             },
             changeIcon: function() {
                 app.set('icon', '$');
@@ -49,13 +49,17 @@
         });
         var Seller = Observer.createComponent({
             data: {
-                name: 'lc'
+                name: 'lc',
+                chgName: function() {
+                    Seller.trackingUpdate(() => {}, 'name', 'casles');
+                }
             },
             didMount() {
-
+                setInterval(() => {
+                    Seller.trackingUpdate(() => {}, 'name', this.data.name + Math.random());
+                });
             },
             didUpdate(prev, next) {
-
             },
             template: `
                 <ul ref="ul">
@@ -63,6 +67,7 @@
                         {{ name }} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i] }}
                     </li>
                 </ul>
+                <button onclick="{{ chgName() }}"></button>
                 <component 
                     data-from="'button'" 
                     change-seller="{{ changeSeller }}" 

@@ -19,9 +19,9 @@ export default class ComponentWatcher {
     render(cb = () => {}) {
         if(!this.component) return; 
         this.child = this.__renderComponent();
-        this.component.init(this.child);
-        this.component.didMount();
         this.resolvedProps = this.__bindProps();
+        this.component.init(this.base, this.child, this.resolvedProps);
+        this.component.didMount();
         this.data = objectAssign({}, this.component.data, this.resolvedProps);
         this.childWatcher = this.__setChildWatcher();
     }
@@ -35,6 +35,7 @@ export default class ComponentWatcher {
             const oldProps = this.resolvedProps;
             const resetWatcherList = [];
             this.resolvedProps = this.__bindProps();
+            this.component.setProps(this.resolvedProps);
             this.component.didUpdate(oldProps, this.resolvedProps);
             for(let key in oldProps) {
                 if(oldProps[key] !== this.resolvedProps[key]) {
@@ -43,9 +44,16 @@ export default class ComponentWatcher {
                     cb && resetWatcherList.push(cb);
                 }
             }
+            for(let key in this.component.data) {
+                if(this.component.data[key] !== this.data[key]) {
+                    let cb = get(this.modelExtractId, key);
+                    this.data[key] = this.component.data[key]
+                    cb && resetWatcherList.push(cb);
+                }
+            }
             resetWatcherList.forEach((items) => {
                 items && items.forEach((item) => {
-                    item.reset(cb = () => {}, this.resolvedProps);
+                    item.reset(cb = () => {}, this.data);
                 });
             })
         }
