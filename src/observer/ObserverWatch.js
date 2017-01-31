@@ -1,6 +1,6 @@
-import BaseWatcher from './BaseWatcher';
-import { randomId, objectAssign, delay } from './utilityFunc';
-import { get, all } from './modelSettlement';
+import BaseWatcher from '../watcher/baseWatcher/BaseWatcher';
+import { randomId, objectAssign, delay } from '../utilityFunc/utilityFunc';
+import { get, all } from '../model/modelSettlement';
 export default class Watch {
     constructor(DOM, data) {
         this.DOM = DOM;

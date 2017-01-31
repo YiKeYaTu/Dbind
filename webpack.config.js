@@ -1,5 +1,5 @@
 module.exports = {
-    entry: './src/ob.js',
+    entry: './src/observer/Observer.js',
     output: {
         path: './',
         filename: 'index.js'

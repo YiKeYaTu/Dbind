@@ -20,6 +20,16 @@
         change-seller="{{ changeSeller.bind(this) }}" 
         change-icon="{{ changeIcon }}"
     ></component>
+
+    <component 
+        data-from="'Seller'" 
+        datas="{{ datas }}" 
+        icon="{{ icon }}" 
+        hahas="{{ hahas }}"
+        msg="{{ datas.toString() }}"
+        change-seller="{{ changeSeller.bind(this) }}" 
+        change-icon="{{ changeIcon }}"
+    ></component>
     <script src="../index.js"></script>
     <script>
         var app = Observer.watch(document.body, {
@@ -27,16 +37,15 @@
             hahas: ['gege', 'lc', '2121221'],
             icon: '$$',
             changeSeller: function() {
-                app.watcher.trackingUpdate(() => {}, 'datas', [122, 333, 1221, 444])
+                app.watcher.trackingUpdate(() => {
+                    console.log(1)
+                }, 'datas', [122, 333, 1221])
             },
             changeIcon: function() {
-                app.set('icon', '$');
-            },
-            changeHahas: function() {
-                app.set('hahas', [1,2]);
+                app.watcher.trackingUpdate(() => {}, 'icon', '212')
             }
         });
-        var button = Observer.createComponent({
+        var button = Observer.createClass({
             data: {
                 world: '<p>hh</p>',
             },
@@ -48,18 +57,22 @@
                 <button onclick="{{ changeIcon() }}">change Icon</button>
             `
         });
-        var Seller = Observer.createComponent({
+        var Seller = Observer.createClass({
             data: {
                 name: 'lc',
-                chgName: function() {
-                    Seller.trackingUpdate(() => {}, 'name', 'casles');
+                handleName: function(name) {
+                    return name + 1121211;
+                }
+            },
+            method: {
+                handleName: function(name) {
+                    return name + 111;
                 }
             },
             willMount() {
-                this.data.name = 'casacss';
             },
             didMount() {
-                
+
             },
             willUpdate(prev, next) {
 
@@ -67,11 +80,11 @@
             template: `
                 <ul ref="ul">
                     <li data-each="i in datas"> 
-                        {{ name.toUpperCase()}} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i] }}
+                        {{ handleName(name).toUpperCase()}} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i] }}
                     </li>
                     <input type="text" value="{{ msg.toUpperCase() }}"></input>
                 </ul>
-                <button onclick="{{ chgName() }}"></button>
+                <button onclick="{{ chgName() }}">chgname</button>
                 <component 
                     data-from="'button'" 
                     change-seller="{{ changeSeller }}" 

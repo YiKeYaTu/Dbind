@@ -1,4 +1,4 @@
-import { statementType } from './statementExtract';
+import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from './parser/statementExtract';
 import TextWatcherStatementToString from './TextWatcherStatementToString';
 import { toArray } from './utilityFunc';
 
@@ -30,8 +30,8 @@ export default class TextWatcher {
     }
     __replaceOnceStatement(statementList) {
         return statementList.map((item) => {
-            if(item.type === statementType[1]) {
-                item.type = statementType[2];
+            if(item.type === ONCE_STATEMENT_TYPE) {
+                item.type = CONST_STRING;
                 item.value = this.base.execStatement(item.value);
             }
             return item;
@@ -40,12 +40,12 @@ export default class TextWatcher {
     __parseView() {
         if(this.vm.length === 1) {
             let data = this.vm[0];
-            return (data.type === statementType[0] ? this.base.execStatement(data.value) : data.value);
+            return (data.type === NOR_STATEMENT_TYPE ? this.base.execStatement(data.value) : data.value);
         }
         return this.vm.reduce((prev, next) => {
-            const v1 = (prev.type === statementType[0] ? this.base.execStatement(prev.value) : prev.value),
-                  v2 = (next.type === statementType[0] ? this.base.execStatement(next.value) : next.value);
-            return {type: statementType[2], value: this.__toString(v1) + this.__toString(v2)};
+            const v1 = (prev.type === NOR_STATEMENT_TYPE ? this.base.execStatement(prev.value) : prev.value),
+                  v2 = (next.type === NOR_STATEMENT_TYPE ? this.base.execStatement(next.value) : next.value);
+            return {type: CONST_STRING, value: this.__toString(v1) + this.__toString(v2)};
         }).value;
     }
     __toString(val) {
@@ -54,7 +54,7 @@ export default class TextWatcher {
     __parseModel() {
         const res = [];
         this.vm.filter((item) => {
-            return item.type === statementType[0];
+            return item.type === NOR_STATEMENT_TYPE;
         }).forEach((item) => {
             this.base.modelExtract(item.value).forEach((model) => {
                 res.push(model.value);

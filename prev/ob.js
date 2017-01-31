@@ -1,12 +1,12 @@
 import Component from './Component';
 import ComponentWatcher from './ComponentWatcher';
 import Watch from './Watch';
+import { createComponentManager } from './ComponentManager';
 import { objectAssign } from './utilityFunc';
 
 class Observer {    
-    static createComponent(componentInf) {
-        const component = objectAssign(new Component, componentInf);
-        return component;
+    static createClass(componentInf) {
+        return createComponentManager(componentInf);
     }
     static registerComponent(key, component) {
         ComponentWatcher.components[key] = component;
