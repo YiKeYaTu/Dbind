@@ -30,6 +30,7 @@ export default class ComponentWatcher {
     this.data = objectAssign({}, this.component.props, this.component.data);
     this.childWatcher = this.__setChildWatcher();
     this.component.didMount();
+    cb();
   }
   reset(cb = () => { }, prevData, nextData) {
     if (this.__getComponentManager().id !== this.componentManager.id) {
@@ -60,9 +61,16 @@ export default class ComponentWatcher {
           cb && resetWatcherList.push(cb);
         }
       }
+      let count = 0, len = 0;
       resetWatcherList.forEach((items) => {
         items && items.forEach((item) => {
-          item.reset(cb = () => { }, this.data);
+          len ++;
+          item.reset(this.data, () => {
+            count ++;
+            if(count === len) {
+              cb();
+            }
+          });
         });
       })
     }
@@ -96,10 +104,11 @@ export default class ComponentWatcher {
       let str = null;
       prop.value.forEach((item) => {
         if (item.type === NOR_STATEMENT_TYPE || item.type === ONCE_STATEMENT_TYPE) {
+          let val = this.base.execStatement(item.value);
           if (str === null) {
-            str = this.base.execStatement(item.value);
+            str = val;
           } else {
-            str += this.base.execStatement(item.value);
+            str += val;
           }
         } else {
           if (str === null) {

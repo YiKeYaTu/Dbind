@@ -31,6 +31,7 @@ function modelExtract(str) {
   let res = [];
   let sybStk = [];
   let brkStk = [];
+  let modelHashTable = { };
   
   let i = -1, p = -1;
   while (++ i < len) {
@@ -49,6 +50,12 @@ function modelExtract(str) {
         res[++ p] = {index: i, value: char};
         while (++ i < len && VAR_AFTER.test(str[i])) {
           res[p].value += str[i];
+        }
+        if(modelHashTable[res[p].value]) {
+          p --;
+          res.pop();
+        } else {
+          modelHashTable[res[p].value] = true;
         }
         if(UN_EXPECT_CHAR[res[p].value] === true) {
           throw new SyntaxError('Unexpected function, in Observer statement you can\'t use function');

@@ -34,49 +34,48 @@ export default class BaseWatcher {
 
     this.render();
   }
-  render(cb = () => { }) {
-    this.obwatcher.render(cb);
+  render() {
+    this.obwatcher.render();
   }
-  reset(cb = () => { }) {
+  reset(data, cb = () => { }) {
     if (this.rendering === true) {
       return;
     }
     const prevData = objectAssign({}, this.obdata);
     const nextData = objectAssign({}, this.obdata);
     this.rendering = true;
-    if (arguments.length === 3) {
-      const key = arguments[1],
-        val = arguments[2];
-      nextData[key] = val;
+    if (typeof data !== 'object') {
+      throw new TypeError('data is not a object');
     } else {
-      if (typeof arguments[1] !== 'object') {
-        throw '';
-      } else {
-        const dataObj = arguments[1];
-        for (let key in dataObj) {
-          nextData[key] = dataObj[key];
-        }
+      for (let key in data) {
+        nextData[key] = data[key];
       }
     }
     this.obdata = nextData;
     delay((time) => {
       this.obwatcher.reset(cb, prevData, nextData);
-      cb(time);
+      cb();
       this.rendering = false;
     });
   }
-  trackingUpdate(cb = () => { }) {
+  trackingUpdate(data, cb = () => { }) {
     const resetWatcherList = [];
-    const target = arguments[1];
-    if (typeof target === 'object') {
-      for (let key in target) {
+    for (let key in data) {
+      if (data.hasOwnProperty(key)) {
         resetWatcherList.push(get(this.modelExtractId, key));
       }
-    } else {
-      resetWatcherList.push(get(this.modelExtractId, target));
     }
+    let count = 0, len = 0;
     resetWatcherList.forEach((items) => {
-      items && items.forEach(item => item.reset(...arguments));
+      items && items.forEach(item => {
+        len ++;
+        item.reset(data, () => {
+          count ++;
+          if(count === len) {
+            cb();
+          }
+        });
+      });
     })
   }
   __getWatcher() {
@@ -181,6 +180,6 @@ export default class BaseWatcher {
     return statementExtract(str);
   }
   execStatement(statement) {
-    return (new Function('data', `with(data) { return ${statement};}`)).call(this.obdata, this.obdata);
+    return (new Function('data', `with(data) { return ${statement};}`))(this.obdata);
   }
 }

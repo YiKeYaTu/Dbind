@@ -1,12 +1,16 @@
 import { walkElement, objectAssign } from '../utilityFunc/utilityFunc';
 
+export const ComponentLifecycle = ['didMount', 'willMount', 'willUpdate', 'shouldUpdate'];
+
 export default class Component {
+
   constructor() {
     this.watcher = null;
     this.element = null;
     this.refs = null;
     this.template = null;
     this.props = null;
+    this.data = null;
   }
   init(watcher, element, props) {
     this.watcher = watcher;
@@ -14,21 +18,10 @@ export default class Component {
     this.props = props;
     this.__setRefs();
   }
-  trackingUpdate(cb = () => { }) {
+  trackingUpdate(data, cb = () => { }) {
     const prevData = objectAssign({}, this.data);
-    if (arguments.length === 3) {
-      const key = arguments[1],
-        val = arguments[2];
-      this.data[key] = val;
-    } else {
-      if (typeof arguments[1] !== 'object') {
-        throw '';
-      } else {
-        const dataObj = arguments[1];
-        for (let key in dataObj) {
-          this.data[key] = dataObj[key];
-        }
-      }
+    for (let key in data) {
+      this.data[key] = data[key];
     }
     this.watcher.obwatcher.reset(cb, prevData, this.data);
   }

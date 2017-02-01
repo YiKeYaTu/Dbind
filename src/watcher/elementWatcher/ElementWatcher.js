@@ -1,15 +1,7 @@
 import { events, on } from '../../dom/event/Event';
-
 import { deepClone, toArray, objectAssign } from '../../utilityFunc/utilityFunc';
-
 import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../parser/statementExtract';
 
-/**
- * 
- * 
- * @export
- * @class ElementWatcher
- */
 export default class ElementWatcher {
   static instructions = ['data-if', 'data-else', 'data-else-if', 'data-html'];
   static escapeNode = ['script'];
@@ -37,13 +29,7 @@ export default class ElementWatcher {
     this.renderInf = null;
     this.childWatchers = null;
   }
-  /**
-   * 
-   * 
-   * @param {any} [cb=() => {}]
-   * 
-   * @memberOf ElementWatcher
-   */
+
   render(cb = () => { }) {
     this.resolvedInstructions = this.__execInstructions();
     this.renderInf = this.__handleResolvedInstructions();
@@ -61,13 +47,6 @@ export default class ElementWatcher {
       this.__setBaseElementDisplay('none');
     }
   }
-  /**
-   * 
-   * 
-   * @param {any} [cb=() => {}]
-   * 
-   * @memberOf ElementWatcher
-   */
   reset(cb = () => { }, prevData, nextData) {
     if (prevData !== nextData)
       this.render(cb);
@@ -78,13 +57,6 @@ export default class ElementWatcher {
   __setObIdAttr() {
     this.base.element.setAttribute('data-ob-id', this.base.obId);
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __getInstructionsModel() {
     let res = [];
     this.instructionsModel = {};
@@ -115,25 +87,11 @@ export default class ElementWatcher {
     });
     return model;
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __getModel() {
     const instructionsModel = this.__getInstructionsModel(),
       attrsModel = this.__getAttrsModel();
     return instructionsModel.concat(attrsModel);
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __getAttrsModel() {
     const res = [];
     this.attrs.obattrs.forEach((attr) => {
@@ -147,13 +105,6 @@ export default class ElementWatcher {
     });
     return res;
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   hasIfInstruction() {
     return this.instructionsList.indexOf(ElementWatcher.instructions[0]) > -1;
   }
@@ -166,26 +117,12 @@ export default class ElementWatcher {
   hasHtmlInstruction() {
     return this.instructionsList.indexOf(ElementWatcher.instructions[3]) > -1;
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __getInstructions() {
     return this.base.__filterAttr(ElementWatcher.instructions, true).map((item) => {
       this.base.removeAttr(item.name);
       return { name: item.name, value: item.value };
     });
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __getAttrs() {
     const attrs = this.base.__filterAttr(events.concat(ElementWatcher.instructions), false);
     const obattrs = [],
@@ -209,13 +146,6 @@ export default class ElementWatcher {
     });
     return { obattrs, normalAttrs };
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __getEvents() {
     const eventAttrs = this.base.__filterAttr(events);
     const obEvents = [],
@@ -240,12 +170,6 @@ export default class ElementWatcher {
     });
     return { obEvents, onceEvents, normalEvents };
   }
-  /**
-   * 
-   * 
-   * 
-   * @memberOf ElementWatcher
-   */
   __bindEvents() {
     const events = [this.events.obEvents, this.events.onceEvents];
     events.forEach((item, index) => {
@@ -260,31 +184,19 @@ export default class ElementWatcher {
       });
     });
   }
-  /**
-   * 
-   * 
-   * 
-   * @memberOf ElementWatcher
-   */
   __bindAttrs() {
     this.attrs.obattrs.forEach((attr) => {
       let str = '';
       attr.value.forEach((item) => {
-        if (item.type === NOR_STATEMENT_TYPE || item.type === ONCE_STATEMENT_TYPE)
+        if (item.type === NOR_STATEMENT_TYPE || item.type === ONCE_STATEMENT_TYPE) {
           str += this.base.execStatement(item.value);
-        else
+        } else {
           str += item.value;
+        }
       });
       this.base.element.setAttribute(attr.name, str);
     });
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __execInstructions() {
     const resolved = {};
     this.instructions.forEach((item) => {
@@ -323,13 +235,6 @@ export default class ElementWatcher {
         });
     }
   }
-  /**
-   * 
-   * 
-   * @returns
-   * 
-   * @memberOf ElementWatcher
-   */
   __handleResolvedInstructions() {
     const renderInf = {
       shouldRender: null,
@@ -341,26 +246,18 @@ export default class ElementWatcher {
       this[ElementWatcher.instructionsHandle[key]](resolvedInstruction, renderInf);
     }
     renderInf.shouldInit = renderInf.shouldRender && this.renderCount === 0;
-    if (this.renderCount === 0 && !renderInf.shouldInit) this.renderCount--;
+    if (this.renderCount === 0 && !renderInf.shouldInit) {
+      this.renderCount--
+    };
     return renderInf;
   }
-  /**
-   * 
-   * 
-   * @param {any} resolvedInstruction
-   * @param {any} renderInf
-   * 
-   * @memberOf ElementWatcher
-   */
   __handleIfInstruction(resolvedInstruction, renderInf) {
     return resolvedInstruction;
   }
   __handleElseIfInstruction(resolvedInstruction, renderInf) {
-    let f1 = this.__handleIfInstruction(resolvedInstruction, renderInf),
-      f2 = this.__handleElseInstruction(resolvedInstruction, renderInf);
-    const shouldRender = f2 && f1;
-    renderInf.shouldRender = shouldRender
-    return shouldRender;
+    let ifFlag = this.__handleIfInstruction(resolvedInstruction, renderInf),
+      elseFlag = this.__handleElseInstruction(resolvedInstruction, renderInf);
+    return renderInf.shouldRender = ifFlag && elseFlag;
   }
   __handleElseInstruction(resolvedInstruction, renderInf) {
     let noError = false, shouldRender = true;
@@ -375,7 +272,7 @@ export default class ElementWatcher {
         return false;
       }
     });
-    if (!noError) throw 'data-else或者data-else-if指令之前必须有一个除ManagerWatcher之外的watcher';
+    if (!noError) throw new SyntaxError('Unexpected else');
     renderInf.shouldRender = shouldRender
     return shouldRender;
   }
