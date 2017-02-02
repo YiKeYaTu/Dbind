@@ -1,7 +1,7 @@
 import Component from '../../component/Component';
 import { ComponentManager } from '../../component/ComponentManager';
 
-import { toArray, objectAssign, randomId, deepClone } from '../../utilityFunc/utilityFunc';
+import { toArray, objectAssign, randomId, deepClone, toHump } from '../../utilityFunc/utilityFunc';
 
 import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../parser/statementExtract';
 import { all, get } from '../../model/modelSettlement';
@@ -160,9 +160,7 @@ export default class ComponentWatcher {
       let parsed = this.base.statementExtract(prop.value);
       let type = null, ob = false;
       let obj = {};
-      obj.name = prop.name.replace(/-(.)/, (a, b) => {
-        return String.fromCharCode(b.charCodeAt(0) - 32);
-      });
+      obj.name = toHump(prop.name);
       obj.value = parsed.map((item) => {
         if (item.type === NOR_STATEMENT_TYPE || item.type === ONCE_STATEMENT_TYPE) {
           ob = true;

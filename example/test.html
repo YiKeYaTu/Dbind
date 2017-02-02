@@ -9,8 +9,7 @@
         }
     </style>
 </head>
-<body> 
-    <button onclick="{{ changeHahas() }}"></button>
+<body>
     <component 
         data-from="'Seller'" 
         datas="{{ datas }}" 
@@ -46,7 +45,9 @@
                 })
             },
             changeIcon: function() {
-                
+                app.watcher.trackingUpdate({
+                    datas: [5, 0]
+                });
             }
         });
         var button = Observer.createClass({
@@ -64,13 +65,14 @@
         var Seller = Observer.createClass({
             data: {
                 name: 'lc',
+                left: '10px',
                 handleName: function(name) {
                     return name + 1121211;
                 },
                 chgName: function() {
                     let now = Date.now()
                     this.trackingUpdate({
-                        name: 'casles'
+                        left: '100px'
                     }, () => {
                         console.log(Date.now() - now);
                         // console.log(document.getElementsByTagName('li')[0].innerHTML)
@@ -86,7 +88,10 @@
 
             },
             template: `
-                <ul ref="ul">
+                <ul ref="ul" style="{{ {
+                    background: 'red',
+                    marginLeft: left
+                } }}">
                     <li data-each="i in datas"> 
                         {{ handleName(name).toUpperCase()}} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i > 2 ? 0 : i] }}
                     </li>
@@ -94,13 +99,13 @@
                 </ul>
                 <button onclick="{{ chgName() }}">chgname</button>
                 <component 
-                    data-from="'button'" 
+                    data-from="'Button'" 
                     change-seller="{{ changeSeller }}" 
                     change-icon="{{ changeIcon }}"
                 ></component>
             `,
             components: {
-                button: button
+                Button: button
             }
         });
         Observer.registerComponent('Seller', Seller);

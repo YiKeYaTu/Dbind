@@ -115,7 +115,7 @@ export default class BaseWatcher {
       }
       if (isManagerWatcher) {
         return BaseWatcher.ManagerWatcher;
-      } else if (ComponentWatcher.nodeNames.indexOf(NODE_NAME) > -1) {
+      } else if (ComponentWatcher.nodeNames.indexOf(NODE_NAME) > -1 || (this.components && this.components[NODE_NAME])) {
         return BaseWatcher.ComponentWatcher;
       } else if (ComponentWatcher.components[NODE_NAME]) {
         return BaseWatcher.ComponentWatcher;

@@ -1,5 +1,5 @@
 import { events, on } from '../../dom/event/Event';
-import { deepClone, toArray, objectAssign } from '../../utilityFunc/utilityFunc';
+import { deepClone, toArray, objectAssign, is, toHumpBack } from '../../utilityFunc/utilityFunc';
 import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../parser/statementExtract';
 
 export default class ElementWatcher {
@@ -33,7 +33,6 @@ export default class ElementWatcher {
   render(cb = () => { }) {
     this.resolvedInstructions = this.__execInstructions();
     this.renderInf = this.__handleResolvedInstructions();
-    this.renderCount++;
     if (this.renderInf.shouldRender || this.renderInf.shouldRender === null) {
       if (this.renderInf.shouldRender) {
         this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
@@ -50,6 +49,7 @@ export default class ElementWatcher {
   reset(cb = () => { }, prevData, nextData) {
     if (prevData !== nextData)
       this.render(cb);
+    // console.log(this.renderInf.)
   }
   __setBaseElementDisplay(display) {
     this.base.element.style.display = display;
@@ -189,13 +189,24 @@ export default class ElementWatcher {
       let str = '';
       attr.value.forEach((item) => {
         if (item.type === NOR_STATEMENT_TYPE || item.type === ONCE_STATEMENT_TYPE) {
-          str += this.base.execStatement(item.value);
+          str += this.__toString(this.base.execStatement(item.value));
         } else {
           str += item.value;
         }
       });
       this.base.element.setAttribute(attr.name, str);
     });
+  }
+  __toString(val) {
+    if(is(val, 'object')) {
+      let str = '';
+      for(let key in val) {
+        str += `${toHumpBack(key)}:${val[key]};`;
+      }
+      return str;
+    } else {
+      return val;
+    }
   }
   __execInstructions() {
     const resolved = {};
@@ -245,10 +256,11 @@ export default class ElementWatcher {
       const resolvedInstruction = this.resolvedInstructions[key];
       this[ElementWatcher.instructionsHandle[key]](resolvedInstruction, renderInf);
     }
-    renderInf.shouldInit = renderInf.shouldRender && this.renderCount === 0;
-    if (this.renderCount === 0 && !renderInf.shouldInit) {
-      this.renderCount--
+    renderInf.shouldInit = (renderInf.shouldRender === true || renderInf.shouldRender === null) && this.renderCount === 0;
+    if (this.renderCount === 0 && renderInf.shouldRender === false) {
+      this.renderCount --;
     };
+    this.renderCount ++;
     return renderInf;
   }
   __handleIfInstruction(resolvedInstruction, renderInf) {
