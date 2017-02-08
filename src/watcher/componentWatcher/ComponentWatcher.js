@@ -4,7 +4,7 @@ import { ComponentManager } from '../../component/ComponentManager';
 import { toArray, objectAssign, randomId, deepClone, toHump } from '../../utilityFunc/utilityFunc';
 
 import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../parser/statementExtract';
-import { all, get } from '../../model/modelSettlement';
+import { all, get, del } from '../../model/modelSettlement';
 
 export default class ComponentWatcher {
   static nodeNames = ['component'];
@@ -16,10 +16,16 @@ export default class ComponentWatcher {
     this.modelExtractId = randomId();
     this.instruction = this.__getInstruction();
     this.props = this.__getProps();
-    this.componentManager = this.__getComponentManager();
-    this.component = this.componentManager.createComponent();
     this.model = this.__getModel();
-    this.__remove();
+    this.componentManager = this.__getComponentManager();
+    this.component = this.componentManager && this.componentManager.createComponent();
+    this.__removeRootNode();
+  }
+  destructor() {
+    this.childWatcher && this.childWatcher.forEach((item) => {
+      item.destructor();
+    }); 
+    this.childWatcher = []; 
   }
   render(cb = () => { }) {
     if (!this.componentManager) return;
@@ -33,11 +39,14 @@ export default class ComponentWatcher {
     cb();
   }
   reset(cb = () => { }, prevData, nextData) {
-    if (this.__getComponentManager().id !== this.componentManager.id) {
-      this.childWatcher.forEach((item) => {
-        item.base.element.parent.removeChild(item.base.element);
-      });
+    let componentManager =  this.__getComponentManager();
+    if (componentManager && (!this.componentManager || componentManager.id !== this.componentManager.id)) {
+      this.componentManager = componentManager;
+      this.component = this.componentManager.createComponent();
+      this.destructor();
       this.render(cb);
+    } else if(!componentManager) {
+      this.destructor();
     } else {
       const oldProps = this.resolvedProps;
       const resetWatcherList = [];
@@ -75,7 +84,7 @@ export default class ComponentWatcher {
       })
     }
   }
-  __remove() {
+  __removeRootNode() {
     const element = this.base.element;
     element.parentNode.removeChild(element);
   }

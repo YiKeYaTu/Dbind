@@ -34,6 +34,9 @@ export default class BaseWatcher {
 
     this.render();
   }
+  destructor() {
+    this.obwatcher.destructor();
+  }
   render() {
     this.obwatcher.render();
   }

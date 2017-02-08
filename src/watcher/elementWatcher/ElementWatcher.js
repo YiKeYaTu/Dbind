@@ -29,7 +29,10 @@ export default class ElementWatcher {
     this.renderInf = null;
     this.childWatchers = null;
   }
-
+  destructor() {
+    let node = this.base.element;
+    node.parentNode.removeChild(node);
+  }
   render(cb = () => { }) {
     this.resolvedInstructions = this.__execInstructions();
     this.renderInf = this.__handleResolvedInstructions();
@@ -38,7 +41,7 @@ export default class ElementWatcher {
         this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
       }
       this.__bindAttrs();
-      if (this.renderInf.shouldInit || this.renderInf.shouldInit === null) {
+      if (this.renderInf.shouldInit) {
         this.__bindEvents();
         this.__setChildWatcher();
       }
@@ -49,7 +52,6 @@ export default class ElementWatcher {
   reset(cb = () => { }, prevData, nextData) {
     if (prevData !== nextData)
       this.render(cb);
-    // console.log(this.renderInf.)
   }
   __setBaseElementDisplay(display) {
     this.base.element.style.display = display;
@@ -264,7 +266,7 @@ export default class ElementWatcher {
     return renderInf;
   }
   __handleIfInstruction(resolvedInstruction, renderInf) {
-    return resolvedInstruction;
+    return renderInf.shouldRender = !!resolvedInstruction;
   }
   __handleElseIfInstruction(resolvedInstruction, renderInf) {
     let ifFlag = this.__handleIfInstruction(resolvedInstruction, renderInf),

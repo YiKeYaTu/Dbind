@@ -46,8 +46,6 @@
 
 	'use strict';
 
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
 	var _Component = __webpack_require__(1);
 
 	var _Component2 = _interopRequireDefault(_Component);
@@ -56,7 +54,7 @@
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _ObserverWatch = __webpack_require__(15);
+	var _ObserverWatch = __webpack_require__(16);
 
 	var _ObserverWatch2 = _interopRequireDefault(_ObserverWatch);
 
@@ -66,43 +64,23 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+	var Observer = {
+	  createClass: function createClass(componentInf) {
+	    return (0, _ComponentManager.createComponentManager)(componentInf);
+	  },
+	  registerComponent: function registerComponent(key, component) {
+	    _ComponentWatcher2.default.components[key] = component;
+	  },
+	  watch: function watch(element, data) {
+	    return new (Function.prototype.bind.apply(_ObserverWatch2.default, [null].concat(Array.prototype.slice.call(arguments))))();
+	  }
+	};
 
-	var Observer = function () {
-	    function Observer() {
-	        _classCallCheck(this, Observer);
-	    }
-
-	    _createClass(Observer, null, [{
-	        key: 'createClass',
-	        value: function createClass(componentInf) {
-	            return (0, _ComponentManager.createComponentManager)(componentInf);
-	        }
-	    }, {
-	        key: 'registerComponent',
-	        value: function registerComponent(key, component) {
-	            _ComponentWatcher2.default.components[key] = component;
-	        }
-	    }, {
-	        key: 'render',
-	        value: function render(element, component, props) {}
-	    }, {
-	        key: 'watch',
-	        value: function watch(element, data) {
-	            return new (Function.prototype.bind.apply(_ObserverWatch2.default, [null].concat(Array.prototype.slice.call(arguments))))();
-	        }
-	    }]);
-
-	    return Observer;
-	}();
-
-	(function () {
-	    if (typeof moudle !== 'undefined' && moudle.exports) {
-	        moudle.exports = Observer;
-	    } else {
-	        window.Observer = Observer;
-	    }
-	})(window);
+	if (typeof moudle !== 'undefined' && module.exports) {
+	  module.exports = Observer;
+	} else {
+	  window.Observer = Observer;
+	}
 
 /***/ },
 /* 1 */
@@ -228,8 +206,9 @@
 	  } else if (is(t, 'object')) {
 	    var nt = {};
 	    for (var key in t) {
-	      nt[key] = deepClone(t[key]);
+	      if (t.hasOwnProperty(key)) nt[key] = deepClone(t[key]);
 	    }
+	    nt.__proto__ = t.__proto__;
 	    return nt;
 	  } else {
 	    return t;
@@ -305,9 +284,9 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _statementExtract = __webpack_require__(5);
+	var _statementExtract = __webpack_require__(6);
 
-	var _modelSettlement = __webpack_require__(6);
+	var _modelSettlement = __webpack_require__(7);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -322,13 +301,21 @@
 	    this.modelExtractId = (0, _utilityFunc.randomId)();
 	    this.instruction = this.__getInstruction();
 	    this.props = this.__getProps();
-	    this.componentManager = this.__getComponentManager();
-	    this.component = this.componentManager.createComponent();
 	    this.model = this.__getModel();
-	    this.__remove();
+	    this.componentManager = this.__getComponentManager();
+	    this.component = this.componentManager && this.componentManager.createComponent();
+	    this.__removeRootNode();
 	  }
 
 	  _createClass(ComponentWatcher, [{
+	    key: 'destructor',
+	    value: function destructor() {
+	      this.childWatcher && this.childWatcher.forEach(function (item) {
+	        item.destructor();
+	      });
+	      this.childWatcher = [];
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
@@ -353,11 +340,14 @@
 	      var prevData = arguments[1];
 	      var nextData = arguments[2];
 
-	      if (this.__getComponentManager().id !== this.componentManager.id) {
-	        this.childWatcher.forEach(function (item) {
-	          item.base.element.parent.removeChild(item.base.element);
-	        });
+	      var componentManager = this.__getComponentManager();
+	      if (componentManager && (!this.componentManager || componentManager.id !== this.componentManager.id)) {
+	        this.componentManager = componentManager;
+	        this.component = this.componentManager.createComponent();
+	        this.destructor();
 	        this.render(cb);
+	      } else if (!componentManager) {
+	        this.destructor();
 	      } else {
 	        var _ret = function () {
 	          var oldProps = _this.resolvedProps;
@@ -403,8 +393,8 @@
 	      }
 	    }
 	  }, {
-	    key: '__remove',
-	    value: function __remove() {
+	    key: '__removeRootNode',
+	    value: function __removeRootNode() {
 	      var element = this.base.element;
 	      element.parentNode.removeChild(element);
 	    }
@@ -576,7 +566,7 @@
 
 	var _Component2 = _interopRequireDefault(_Component);
 
-	var _checkComponentName = __webpack_require__(16);
+	var _checkComponentName = __webpack_require__(5);
 
 	var _checkComponentName2 = _interopRequireDefault(_checkComponentName);
 
@@ -645,6 +635,23 @@
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
+	exports.default = checkComponentName;
+	function checkComponentName(componentName) {
+	  var code = componentName.charCodeAt(0);
+	  if (code < 65 || code > 90) {
+	    throw new SyntaxError('component frist name is not A-Z');
+	  }
+	}
+
+/***/ },
+/* 6 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
 	exports.resetStatementSyb = resetStatementSyb;
 	exports.default = statementExtract;
 	var NOR_STATEMENT = {
@@ -673,7 +680,7 @@
 	    for (; i < len; i++, index++) {
 	      if (str[index] !== statementSyb[i]) return -1;
 	    }
-	    return i;
+	    return i - 1;
 	  };
 	}
 
@@ -761,19 +768,20 @@
 	}
 
 /***/ },
-/* 6 */
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	    value: true
+	  value: true
 	});
 	exports.set = set;
 	exports.get = get;
 	exports.all = all;
+	exports.del = del;
 
-	var _BaseWatcher = __webpack_require__(7);
+	var _BaseWatcher = __webpack_require__(8);
 
 	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
 
@@ -782,26 +790,31 @@
 	var modelSettlement = {};
 
 	function set(modelExtractId, key, watcher) {
-	    if (!(watcher instanceof _BaseWatcher2.default)) throw new TypeError('watcher must extends from BaseWatcher');
-	    if (!modelSettlement[modelExtractId]) {
-	        modelSettlement[modelExtractId] = {};
-	    }
-	    var target = modelSettlement[modelExtractId];
-	    if (target[key]) {
-	        target[key].push(watcher);
-	    } else {
-	        target[key] = [watcher];
-	    }
+	  if (!(watcher instanceof _BaseWatcher2.default)) throw new TypeError('watcher must extends from BaseWatcher');
+	  if (!modelSettlement[modelExtractId]) {
+	    modelSettlement[modelExtractId] = {};
+	  }
+	  var target = modelSettlement[modelExtractId];
+	  if (target[key]) {
+	    target[key].push(watcher);
+	  } else {
+	    target[key] = [watcher];
+	  }
 	}
 	function get(modelExtractId, key) {
-	    return modelSettlement[modelExtractId] && modelSettlement[modelExtractId][key] || null;
+	  return modelSettlement[modelExtractId] && modelSettlement[modelExtractId][key] || null;
 	}
 	function all(modelExtractId) {
-	    return modelSettlement[modelExtractId];
+	  return modelSettlement[modelExtractId];
+	}
+	function del(modelExtractId, key, watcher) {
+	  modelSettlement[modelExtractId][key] = modelSettlement[modelExtractId][key].filter(function (item) {
+	    return item !== watcher;
+	  });
 	}
 
 /***/ },
-/* 7 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -816,11 +829,11 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _ManagerWatcher = __webpack_require__(8);
+	var _ManagerWatcher = __webpack_require__(9);
 
 	var _ManagerWatcher2 = _interopRequireDefault(_ManagerWatcher);
 
-	var _ElementWatcher = __webpack_require__(10);
+	var _ElementWatcher = __webpack_require__(11);
 
 	var _ElementWatcher2 = _interopRequireDefault(_ElementWatcher);
 
@@ -828,19 +841,19 @@
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _TextWatcher = __webpack_require__(12);
+	var _TextWatcher = __webpack_require__(13);
 
 	var _TextWatcher2 = _interopRequireDefault(_TextWatcher);
 
-	var _modelExtract2 = __webpack_require__(14);
+	var _modelExtract2 = __webpack_require__(15);
 
 	var _modelExtract3 = _interopRequireDefault(_modelExtract2);
 
-	var _statementExtract2 = __webpack_require__(5);
+	var _statementExtract2 = __webpack_require__(6);
 
 	var _statementExtract3 = _interopRequireDefault(_statementExtract2);
 
-	var _modelSettlement = __webpack_require__(6);
+	var _modelSettlement = __webpack_require__(7);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -874,6 +887,11 @@
 	  }
 
 	  _createClass(BaseWatcher, [{
+	    key: 'destructor',
+	    value: function destructor() {
+	      this.obwatcher.destructor();
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      this.obwatcher.render();
@@ -1079,7 +1097,7 @@
 	exports.default = BaseWatcher;
 
 /***/ },
-/* 8 */
+/* 9 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1092,9 +1110,9 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _modelSettlement = __webpack_require__(6);
+	var _modelSettlement = __webpack_require__(7);
 
-	var _traversalVector = __webpack_require__(9);
+	var _traversalVector = __webpack_require__(10);
 
 	var _traversalVector2 = _interopRequireDefault(_traversalVector);
 
@@ -1140,9 +1158,9 @@
 	        this.render(prevLen);
 	      } else if (prevLen > nextLen) {
 	        for (var i = nextLen; i < prevLen; i++) {
-	          var node = this.childWacther[i].element;
-	          node.parentNode.removeChild(node);
+	          this.childWacther[i].destructor();
 	        }
+	        this.childWacther = this.childWacther.slice(0, nextLen);
 	      }
 	    }
 	  }, {
@@ -1253,7 +1271,7 @@
 	exports.default = ManagerWatcher;
 
 /***/ },
-/* 9 */
+/* 10 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1284,7 +1302,7 @@
 	}
 
 /***/ },
-/* 10 */
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1297,11 +1315,11 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Event = __webpack_require__(11);
+	var _Event = __webpack_require__(12);
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _statementExtract = __webpack_require__(5);
+	var _statementExtract = __webpack_require__(6);
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -1332,6 +1350,12 @@
 	  }
 
 	  _createClass(ElementWatcher, [{
+	    key: 'destructor',
+	    value: function destructor() {
+	      var node = this.base.element;
+	      node.parentNode.removeChild(node);
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
@@ -1343,7 +1367,7 @@
 	          this.__setBaseElementDisplay(this.base.pastDOMInformation.display);
 	        }
 	        this.__bindAttrs();
-	        if (this.renderInf.shouldInit || this.renderInf.shouldInit === null) {
+	        if (this.renderInf.shouldInit) {
 	          this.__bindEvents();
 	          this.__setChildWatcher();
 	        }
@@ -1359,7 +1383,6 @@
 	      var nextData = arguments[2];
 
 	      if (prevData !== nextData) this.render(cb);
-	      // console.log(this.renderInf.)
 	    }
 	  }, {
 	    key: '__setBaseElementDisplay',
@@ -1619,7 +1642,7 @@
 	  }, {
 	    key: '__handleIfInstruction',
 	    value: function __handleIfInstruction(resolvedInstruction, renderInf) {
-	      return resolvedInstruction;
+	      return renderInf.shouldRender = !!resolvedInstruction;
 	    }
 	  }, {
 	    key: '__handleElseIfInstruction',
@@ -1666,7 +1689,7 @@
 	exports.default = ElementWatcher;
 
 /***/ },
-/* 11 */
+/* 12 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1726,7 +1749,7 @@
 	}
 
 /***/ },
-/* 12 */
+/* 13 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1737,11 +1760,11 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _statementToString = __webpack_require__(13);
+	var _statementToString = __webpack_require__(14);
 
 	var _statementToString2 = _interopRequireDefault(_statementToString);
 
-	var _statementExtract = __webpack_require__(5);
+	var _statementExtract = __webpack_require__(6);
 
 	var _utilityFunc = __webpack_require__(2);
 
@@ -1761,6 +1784,12 @@
 	  }
 
 	  _createClass(TextWatcher, [{
+	    key: 'destructor',
+	    value: function destructor() {
+	      var node = this.base.element;
+	      node.parentNode.removeChild(node);
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
@@ -1848,7 +1877,7 @@
 	exports.default = TextWatcher;
 
 /***/ },
-/* 13 */
+/* 14 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1877,7 +1906,7 @@
 	}
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1969,7 +1998,7 @@
 	exports.default = modelExtract;
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1980,13 +2009,13 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _BaseWatcher = __webpack_require__(7);
+	var _BaseWatcher = __webpack_require__(8);
 
 	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _modelSettlement = __webpack_require__(6);
+	var _modelSettlement = __webpack_require__(7);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -2011,53 +2040,12 @@
 	                _this.watcher = new _BaseWatcher2.default(_this.DOM, _this.data, null, null, _this.modelId);
 	            });
 	        }
-	        // set() {
-	        //     const cbs = [];
-	        //     if(arguments.length === 2) {
-	        //         const key = arguments[0],
-	        //               val = arguments[1];
-	        //         cbs.push(get(this.modelId, key));
-	        //     } else {
-	        //         if(typeof arguments[0] !== 'object') {
-	        //             throw '';
-	        //         } else {
-	        //             const dataObj = arguments[0];
-	        //             for(let key in dataObj) {
-	        //                 cbs.push(get(this.modelId, key));
-	        //             }
-	        //         }
-	        //     }
-	        //     cbs.forEach((watchers) => {
-	        //         watchers && watchers.forEach((watcher) => {
-	        //             watcher.setData(() => {}, ...arguments);
-	        //             // fn();
-	        //         });
-	        //     });
-	        // }
-
 	    }]);
 
 	    return Watch;
 	}();
 
 	exports.default = Watch;
-
-/***/ },
-/* 16 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = checkComponentName;
-	function checkComponentName(componentName) {
-	  var code = componentName.charCodeAt(0);
-	  if (code < 65 || code > 90) {
-	    throw new SyntaxError('component frist name is not A-Z');
-	  }
-	}
 
 /***/ }
 /******/ ]);

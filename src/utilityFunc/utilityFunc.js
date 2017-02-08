@@ -18,8 +18,10 @@ export function deepClone(t) {
   } else if (is(t, 'object')) {
     const nt = {};
     for (let key in t) {
-      nt[key] = deepClone(t[key]);
+      if(t.hasOwnProperty(key))
+        nt[key] = deepClone(t[key]);
     }
+    nt.__proto__ = t.__proto__;
     return nt;
   } else {
     return t;

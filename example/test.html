@@ -12,6 +12,8 @@
 <body>
     <component 
         data-from="'Seller'" 
+        data-each="i in hahas"
+        key="{{hahas[i]}}"
         datas="{{ datas }}" 
         icon="{{ icon }}" 
         hahas="{{ hahas }}"
@@ -19,36 +21,32 @@
         change-seller="{{ changeSeller.bind(this) }}" 
         change-icon="{{ changeIcon }}"
     ></component>
-
-    <component 
-        data-from="'Seller'" 
-        datas="{{ datas }}" 
-        icon="{{ icon }}" 
-        hahas="{{ hahas }}"
-        msg="{{ datas.toString() }}"
-        change-seller="{{ changeSeller.bind(this) }}" 
-        change-icon="{{ changeIcon }}"
-    ></component>
+    <component data-from="show" data="{{ tree }}"></component>
     <script src="../index.js"></script>
     <script>
         var app = Observer.watch(document.body, {
             datas: ['100', '200', '300'],
             hahas: ['gege', 'lc', '2121221'],
             icon: '$$',
-            changeSeller: function() {
-                    let now = Date.now()
+            tree: {name: 'lc', children: {name: 'zy', children: null} },
+            changeSeller: function() {       
                 app.watcher.trackingUpdate({
                     datas: [1, 3, 4, 5, 6, 6,7]
-                }, () => {
-
-                        console.log(Date.now() - now);
-                })
+                });
             },
             changeIcon: function() {
                 app.watcher.trackingUpdate({
                     datas: [5, 0]
                 });
             }
+        });
+        var show = Observer.createClass({
+            template: `
+                <div data-if="data">
+                    <p>{{ data.name }}</p>
+                    <component data-from="show" data="{{ data.children }}"></component>
+                </div>
+            `
         });
         var button = Observer.createClass({
             data: {
@@ -66,17 +64,27 @@
             data: {
                 name: 'lc',
                 left: '10px',
+                dataComponent: Observer.createClass({
+                    didMount() {
+                    },
+                    template: `<h1>我大</h1>`
+                }), 
                 handleName: function(name) {
                     return name + 1121211;
+                },
+                chgComponent: function() {
+                    this.trackingUpdate({
+                        dataComponent: null
+                    });
                 },
                 chgName: function() {
                     let now = Date.now()
                     this.trackingUpdate({
                         left: '100px'
-                    }, () => {
-                        console.log(Date.now() - now);
-                        // console.log(document.getElementsByTagName('li')[0].innerHTML)
                     });
+                },
+                handleClick(index) {
+                    console.log(index)
                 }
             },
             willMount() {
@@ -88,11 +96,14 @@
 
             },
             template: `
+                <component data-from="dataComponent" name="{{ [1, 3 ,4] }}"></component>
+                <button onclick="{{ chgComponent() }}" >1244141</button>
+                {{key}}
                 <ul ref="ul" style="{{ {
                     background: 'red',
                     marginLeft: left
                 } }}">
-                    <li data-each="i in datas"> 
+                    <li data-each="i in datas" onclick="{{ handleClick(i) }}"> 
                         {{ handleName(name).toUpperCase()}} : <span>{{ datas[i] }}</span>{{ icon }} haha: {{ hahas[i > 2 ? 0 : i] }}
                     </li>
                     <input type="text" value="{{ msg.toUpperCase() }}"></input>
@@ -109,6 +120,7 @@
             }
         });
         Observer.registerComponent('Seller', Seller);
+        Observer.registerComponent('Show', show);
     </script>
 </body>
 </html>

@@ -28,9 +28,9 @@ export default class ManagerWatcher {
       this.render(prevLen);
     } else if (prevLen > nextLen) {
       for(let i = nextLen; i < prevLen; i ++) {
-        let node = this.childWacther[i].element;
-        node.parentNode.removeChild(node);
+        this.childWacther[i].destructor();
       }
+      this.childWacther = this.childWacther.slice(0 ,nextLen);
     }
   }
   __appendChildWatcherToDOM(childIndex) {

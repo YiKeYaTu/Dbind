@@ -23,7 +23,7 @@ function checkStatement(statementSyb) {
     for(; i < len; i ++, index ++) {
       if(str[index] !== statementSyb[i]) return -1;
     }
-    return i;
+    return i - 1;
   }
 }
 

@@ -12,6 +12,10 @@ export default class TextWatcher {
     this.model = this.__parseModel();
     this.view = null;
   }
+  destructor() {
+    let node = this.base.element;
+    node.parentNode.removeChild(node);
+  }
   render(cb = () => { }) {
     this.view = this.__parseView();
     if (this.watcherType === TextWatcher.textNodeWatcher) {
