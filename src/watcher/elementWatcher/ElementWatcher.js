@@ -32,6 +32,7 @@ export default class ElementWatcher {
   destructor() {
     let node = this.base.element;
     node.parentNode.removeChild(node);
+    this.__destructorChild();
   }
   render(cb = () => { }) {
     this.resolvedInstructions = this.__execInstructions();
@@ -43,15 +44,57 @@ export default class ElementWatcher {
       this.__bindAttrs();
       if (this.renderInf.shouldInit) {
         this.__bindEvents();
+      }
+      if (!this.childWatchers) {
         this.__setChildWatcher();
       }
     } else {
+      if(this.childWatchers) {
+        this.__destructorChild();
+        this.base.element.innerHTML = this.base.pastDOMInformation.innerHTML;
+      }
       this.__setBaseElementDisplay('none');
     }
   }
   reset(cb = () => { }, prevData, nextData) {
-    if (prevData !== nextData)
+    if (prevData !== nextData) {
       this.render(cb);
+    }
+  }
+  __destructorChild() {
+    this.childWatchers && this.childWatchers.forEach(item => item.destructor());
+    this.childWatchers = null;
+  }
+  __setChildWatcher() {
+    if (ElementWatcher.escapeNode.indexOf(this.base.pastDOMInformation.nodeName.toLowerCase()) > -1) return;
+    if (this.renderInf.shouldRenderHtml) {
+      this.childWatchers = [new this.BaseWatcher(
+        this.base.element,
+        objectAssign({}, this.base.obdata),
+        null,
+        this.BaseWatcher.TextWatcher,
+        this.base.modelExtractId,
+        this.base.components,
+        this.base,
+      )];
+    } else {
+      let previousWatcher = null;
+      this.childWatchers = toArray(this.base.element.childNodes)
+        .map((item, index) => {
+          const childWatcher = new this.BaseWatcher(
+            item,
+            objectAssign({}, this.base.obdata),
+            previousWatcher,
+            null,
+            this.base.modelExtractId,
+            this.base.components,
+            this.base,
+            this.base.getChildId(index)
+          );
+          previousWatcher = childWatcher;
+          return childWatcher;
+        });
+    }
   }
   __setBaseElementDisplay(display) {
     this.base.element.style.display = display;
@@ -216,37 +259,6 @@ export default class ElementWatcher {
       resolved[item.name] = this.base.execStatement(item.value);
     });
     return resolved;
-  }
-  __setChildWatcher() {
-    if (ElementWatcher.escapeNode.indexOf(this.base.pastDOMInformation.nodeName.toLowerCase()) > -1) return;
-    if (this.renderInf.shouldRenderHtml) {
-      this.childWatchers = [new this.BaseWatcher(
-        this.base.element,
-        objectAssign({}, this.base.obdata),
-        null,
-        this.BaseWatcher.TextWatcher,
-        this.base.modelExtractId,
-        this.base.components,
-        this.base,
-      )];
-    } else {
-      let previousWatcher = null;
-      this.childWatchers = toArray(this.base.element.childNodes)
-        .map((item, index) => {
-          const childWatcher = new this.BaseWatcher(
-            item,
-            objectAssign({}, this.base.obdata),
-            previousWatcher,
-            null,
-            this.base.modelExtractId,
-            this.base.components,
-            this.base,
-            this.base.getChildId(index)
-          );
-          previousWatcher = childWatcher;
-          return childWatcher;
-        });
-    }
   }
   __handleResolvedInstructions() {
     const renderInf = {

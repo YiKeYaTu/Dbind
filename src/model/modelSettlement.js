@@ -21,8 +21,9 @@ export function get(modelExtractId, key) {
 export function all(modelExtractId) {
   return modelSettlement[modelExtractId];
 }
-export function del(modelExtractId, key, watcher) {
-  modelSettlement[modelExtractId][key] = modelSettlement[modelExtractId][key].filter((item) => {
-    return item !== watcher;
-  });
+export function deleteOne(modelExtractId, key) {
+  modelSettlement[modelExtractId][key]
+}
+export function deleteAll(modelExtractId) {
+  modelSettlement[modelExtractId] = null;
 }

@@ -4,7 +4,7 @@ import { ComponentManager } from '../../component/ComponentManager';
 import { toArray, objectAssign, randomId, deepClone, toHump } from '../../utilityFunc/utilityFunc';
 
 import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../parser/statementExtract';
-import { all, get, del } from '../../model/modelSettlement';
+import { all, get, deleteAll } from '../../model/modelSettlement';
 
 export default class ComponentWatcher {
   static nodeNames = ['component'];
@@ -25,6 +25,7 @@ export default class ComponentWatcher {
     this.childWatcher && this.childWatcher.forEach((item) => {
       item.destructor();
     }); 
+    deleteAll(this.modelExtractId);
     this.childWatcher = []; 
   }
   render(cb = () => { }) {

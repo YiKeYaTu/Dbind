@@ -26,6 +26,7 @@ export default class BaseWatcher {
     this.obdata = obdata;
     this.previous = previous;
     this.rendering = false;
+    this.hasDelete = false;
     this.modelExtractId = modelExtractId;
     this.pastDOMInformation = this.__getPastDOMInformation();
     this.obtype = this.__getType(forceWatcherType);
@@ -35,6 +36,7 @@ export default class BaseWatcher {
     this.render();
   }
   destructor() {
+    this.hasDelete = true;
     this.obwatcher.destructor();
   }
   render() {
@@ -56,9 +58,11 @@ export default class BaseWatcher {
     }
     this.obdata = nextData;
     delay((time) => {
-      this.obwatcher.reset(cb, prevData, nextData);
+      if(!this.hasDelete) {
+        this.obwatcher.reset(cb, prevData, nextData);
+        this.rendering = false;
+      }
       cb();
-      this.rendering = false;
     });
   }
   trackingUpdate(data, cb = () => { }) {
