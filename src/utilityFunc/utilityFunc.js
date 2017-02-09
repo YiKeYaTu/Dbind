@@ -15,7 +15,7 @@ export function is(target, type) {
 }
 export function deepClone(t) {
   if (is(t, 'array')) {
-    t = t.map((item) => {
+    return t.map((item) => {
       return deepClone(item);
     });
   } else if (is(t, 'object')) {

@@ -10,6 +10,7 @@
     </style>
 </head>
 <body>
+    <lazy-box load-path="./faa" loading-component="{{ loading }}" children="2121"></lazy-box>
     <seller 
         data-each="i in hahas"
         key="{{hahas[i]}}"
@@ -21,13 +22,37 @@
         change-icon="{{ changeIcon }}"
     ></seller>
     <show data="{{ tree }}"></show>
+    <button onclick="{{ changeTree() }}">chgTree</button>
     <script src="../index.js"></script>
     <script>
         var app = Observer.watch(document.body, {
             datas: ['100', '200', '300'],
             hahas: ['gege', 'lc', '2121221'],
             icon: '$$',
-            tree: {name: 'lc', children: {name: 'zy', children: null} },
+            tree: {
+                name: 'lc', 
+                children: {
+                    name: 'zy', 
+                    children: {
+                        name: 'sa',
+                        children: {
+                            name: 'hashsasa',
+                            children: null
+                        }
+                    }
+                } 
+            },
+            changeTree() {
+                var tree = app.data.tree;
+                tree.children.children = {name: 'what'};
+                while(tree.children) {
+                    tree.children = Object.assign({}, tree.children);
+                    tree = tree.children;
+                }
+                app.watcher.trackingUpdate({
+                    tree:  Object.assign({}, app.data.tree)
+                });
+            },
             changeSeller: function() {       
                 app.watcher.trackingUpdate({
                     datas: [1, 3, 4, 5, 6, 6,7]
@@ -37,6 +62,48 @@
                 app.watcher.trackingUpdate({
                     datas: [5, 0]
                 });
+            }
+        });
+        var loading = Observer.createClass({
+            template: 'im loading'
+        });
+        var LazyBox = Observer.createClass({
+            keepProps: [
+                'loadingComponent',
+                'loadPath'
+            ],
+            didMount() {
+                setTimeout(() => {
+                    this.trackingUpdate({
+                        component: Observer.createClass({
+                            template: 'load success'
+                        })
+                    });
+                }, 1000)
+            },
+            getPropsStr(props) {
+                let propsStr = '';
+                for(let key in props) {
+                    if(this.keepProps.indexOf(key) === -1)
+                        propsStr += `${key}="${props[key]}" `;
+                }    
+                return propsStr;
+            },
+            data: {
+                component: null,
+                props: null
+            },
+            template() {
+                const props = this.props;
+
+                const loadingComponent = props.loadingComponent || null;
+                const loadPath = props.loadPath;
+
+                this.data.component = loadingComponent;
+
+                let propsStr = this.getPropsStr(props);
+
+                return `<component data-from="component" ${propsStr}></component>`;
             }
         });
         var show = Observer.createClass({
@@ -86,7 +153,11 @@
                     console.log(index)
                 }
             },
+            initliaze() {
+                
+            },
             willMount() {
+                
             },
             didMount() {
                 
@@ -120,6 +191,8 @@
         });
         Observer.registerComponent('seller', Seller);
         Observer.registerComponent('show', show);
+        Observer.registerComponent('lazy-box', LazyBox);
+        Observer.registerComponent('loading', loading);
     </script>
 </body>
 </html>

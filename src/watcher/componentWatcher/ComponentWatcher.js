@@ -8,13 +8,13 @@ import { all, get, deleteAll } from '../../model/modelSettlement';
 
 export default class ComponentWatcher {
   static nodeName = 'component';
-  static instructions = ['data-from'];
+  static instructions = ['data-from', 'data-props'];
   static components = {};
   constructor(base, BaseWatcher) {
     this.base = base;
     this.BaseWatcher = BaseWatcher;
     this.modelExtractId = randomId();
-    this.instruction = this.__getInstruction();
+    this.instructions = this.__getInstructions();
     this.props = this.__getProps();
     this.model = this.__getModel();
     this.componentManager = this.__getComponentManager();
@@ -30,9 +30,10 @@ export default class ComponentWatcher {
   }
   render(cb = () => { }) {
     if (!this.componentManager) return;
-    this.child = this.__renderComponent();
     this.resolvedProps = this.__bindProps();
-    this.component.init(this.base, this.child, this.resolvedProps);
+    this.component.init(this.base, this.resolvedProps);
+    this.child = this.__renderComponent();
+    this.component.setDOMElement(this.child);
     this.component.willMount();
     this.data = objectAssign({}, this.component.props, this.component.data);
     this.childWatcher = this.__setChildWatcher();
@@ -126,7 +127,11 @@ export default class ComponentWatcher {
     const frg = document.createDocumentFragment();
     const template = document.createElement('div');
     const parent = this.base.pastDOMInformation.parentNode;
-    template.innerHTML = this.component.template;
+    if(typeof this.component.template === 'string') {
+      template.innerHTML = this.component.template;
+    } else if(typeof this.component.template === 'function') {
+      template.innerHTML = this.component.template();
+    }
     const child = toArray(template.childNodes);
     while (template.childNodes[0]) {
       frg.appendChild(template.childNodes[0]);
@@ -135,7 +140,7 @@ export default class ComponentWatcher {
     return child;
   }
   __getComponentManager() {
-    const componentDataFrom = this.instruction && this.base.execStatement(this.instruction.value);
+    const componentDataFrom = this.base.execStatement(this.instructions[ComponentWatcher.instructions[0]]);
     const componentName = this.base.pastDOMInformation.nodeName.toLowerCase();
     let componentManager = null;
 
@@ -159,8 +164,12 @@ export default class ComponentWatcher {
 
     return componentManager;
   }
-  __getInstruction() {
-    return this.base.__filterAttr(ComponentWatcher.instructions, true)[0];
+  __getInstructions() {
+    const ins = {};
+    this.base.__filterAttr(ComponentWatcher.instructions, true).forEach((item) => {
+      ins[item.name] = item.value;
+    });
+    return ins;
   }
   __getProps() {
     const props = this.base.__filterAttr(ComponentWatcher.instructions, false);
@@ -192,9 +201,11 @@ export default class ComponentWatcher {
   }
   __getInstructionsModel() {
     const res = [];
-    this.instruction && this.base.modelExtract(this.instruction.value).forEach((item) => {
-      res.push(item.value);
-    });
+    for(let key in this.instructions) {
+      this.base.modelExtract(this.instructions[key]).forEach((item) => {
+        res.push(item.value);
+      });
+    }
     return res;
   }
   __getPropsModel() {

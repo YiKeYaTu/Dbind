@@ -12,11 +12,13 @@ export default class Component {
     this.props = null;
     this.data = null;
   }
-  init(watcher, element, props) {
+  init(watcher, props) {
     this.watcher = watcher;
-    this.element = element;
     this.props = props;
     this.__setRefs();
+  }
+  setDOMElement(element) {
+    this.element = element;
   }
   trackingUpdate(data, cb = () => { }) {
     const prevData = objectAssign({}, this.data);

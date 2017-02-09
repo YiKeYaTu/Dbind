@@ -50,7 +50,7 @@
 
 	var _Component2 = _interopRequireDefault(_Component);
 
-	var _ObserverWatch = __webpack_require__(16);
+	var _ObserverWatch = __webpack_require__(3);
 
 	var _ObserverWatch2 = _interopRequireDefault(_ObserverWatch);
 
@@ -58,7 +58,7 @@
 
 	var _registerComponent3 = _interopRequireDefault(_registerComponent2);
 
-	var _ComponentManager = __webpack_require__(4);
+	var _ComponentManager = __webpack_require__(12);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -113,11 +113,15 @@
 
 	  _createClass(Component, [{
 	    key: 'init',
-	    value: function init(watcher, element, props) {
+	    value: function init(watcher, props) {
 	      this.watcher = watcher;
-	      this.element = element;
 	      this.props = props;
 	      this.__setRefs();
+	    }
+	  }, {
+	    key: 'setDOMElement',
+	    value: function setDOMElement(element) {
+	      this.element = element;
 	    }
 	  }, {
 	    key: 'trackingUpdate',
@@ -202,7 +206,7 @@
 	}
 	function deepClone(t) {
 	  if (is(t, 'array')) {
-	    t = t.map(function (item) {
+	    return t.map(function (item) {
 	      return deepClone(item);
 	    });
 	  } else if (is(t, 'object')) {
@@ -271,550 +275,51 @@
 	'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
-	  value: true
+	    value: true
 	});
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Component = __webpack_require__(1);
-
-	var _Component2 = _interopRequireDefault(_Component);
-
-	var _ComponentManager = __webpack_require__(4);
-
-	var _utilityFunc = __webpack_require__(2);
-
-	var _statementExtract = __webpack_require__(6);
-
-	var _modelSettlement = __webpack_require__(7);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var ComponentWatcher = function () {
-	  function ComponentWatcher(base, BaseWatcher) {
-	    _classCallCheck(this, ComponentWatcher);
-
-	    this.base = base;
-	    this.BaseWatcher = BaseWatcher;
-	    this.modelExtractId = (0, _utilityFunc.randomId)();
-	    this.instruction = this.__getInstruction();
-	    this.props = this.__getProps();
-	    this.model = this.__getModel();
-	    this.componentManager = this.__getComponentManager();
-	    this.component = this.componentManager && this.componentManager.createComponent();
-	    this.__removeRootNode();
-	  }
-
-	  _createClass(ComponentWatcher, [{
-	    key: 'destructor',
-	    value: function destructor() {
-	      this.childWatcher && this.childWatcher.forEach(function (item) {
-	        item.destructor();
-	      });
-	      (0, _modelSettlement.deleteAll)(this.modelExtractId);
-	      this.childWatcher = [];
-	    }
-	  }, {
-	    key: 'render',
-	    value: function render() {
-	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-
-	      if (!this.componentManager) return;
-	      this.child = this.__renderComponent();
-	      this.resolvedProps = this.__bindProps();
-	      this.component.init(this.base, this.child, this.resolvedProps);
-	      this.component.willMount();
-	      this.data = (0, _utilityFunc.objectAssign)({}, this.component.props, this.component.data);
-	      this.childWatcher = this.__setChildWatcher();
-	      this.component.didMount();
-	      cb();
-	    }
-	  }, {
-	    key: 'reset',
-	    value: function reset() {
-	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-	      var prevData = arguments[1];
-	      var nextData = arguments[2];
-
-	      var componentManager = this.__getComponentManager();
-	      if (componentManager && (!this.componentManager || componentManager.id !== this.componentManager.id)) {
-	        this.componentManager = componentManager;
-	        this.component = this.componentManager.createComponent();
-	        this.destructor();
-	        this.render(cb);
-	      } else if (!componentManager) {
-	        this.destructor();
-	      } else {
-	        var oldProps = this.resolvedProps;
-	        var resetWatcherList = [];
-	        this.resolvedProps = this.__bindProps();
-	        if (!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
-	          return;
-	        }
-	        this.component.setProps(this.resolvedProps);
-	        this.component.willUpdate(oldProps, this.resolvedProps);
-	        for (var key in oldProps) {
-	          if (oldProps[key] !== this.component.props[key]) {
-	            var _cb = (0, _modelSettlement.get)(this.modelExtractId, key);
-	            this.data[key] = this.component.props[key];
-	            _cb && resetWatcherList.push(_cb);
-	          }
-	        }
-	        for (var _key in this.component.data) {
-	          if (this.component.data[_key] !== this.data[_key]) {
-	            var _cb2 = (0, _modelSettlement.get)(this.modelExtractId, _key);
-	            this.data[_key] = this.component.data[_key];
-	            _cb2 && resetWatcherList.push(_cb2);
-	          }
-	        }
-	        this.base.runResetWatcher(resetWatcherList, this.data, cb);
-	      }
-	    }
-	  }, {
-	    key: '__removeRootNode',
-	    value: function __removeRootNode() {
-	      var element = this.base.element;
-	      element.parentNode.removeChild(element);
-	    }
-	  }, {
-	    key: '__setChildWatcher',
-	    value: function __setChildWatcher() {
-	      var _this = this;
-
-	      var previous = null;
-	      return this.child.map(function (item, index) {
-	        return new _this.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this.data), previous, null, _this.modelExtractId, _this.component.components, _this.base, _this.base.getChildId(index));
-	        previous = item;
-	      });
-	    }
-	  }, {
-	    key: '__bindProps',
-	    value: function __bindProps() {
-	      var _this2 = this;
-
-	      var props = {};
-	      this.props.normalProps.forEach(function (item) {
-	        props[item.name] = item.value[0].value;
-	      });
-	      this.props.obProps.forEach(function (prop) {
-	        var str = null;
-	        prop.value.forEach(function (item) {
-	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE || item.type === _statementExtract.ONCE_STATEMENT_TYPE) {
-	            var val = _this2.base.execStatement(item.value);
-	            if (str === null) {
-	              str = val;
-	            } else {
-	              str += val;
-	            }
-	          } else {
-	            if (str === null) {
-	              str = item.value;
-	            } else {
-	              str += item.value;
-	            }
-	          }
-	        });
-	        props[prop.name] = str;
-	      });
-	      return props;
-	    }
-	  }, {
-	    key: '__renderComponent',
-	    value: function __renderComponent() {
-	      if (!this.component) return;
-	      var frg = document.createDocumentFragment();
-	      var template = document.createElement('div');
-	      var parent = this.base.pastDOMInformation.parentNode;
-	      template.innerHTML = this.component.template;
-	      var child = (0, _utilityFunc.toArray)(template.childNodes);
-	      while (template.childNodes[0]) {
-	        frg.appendChild(template.childNodes[0]);
-	      }
-	      parent.insertBefore(frg, this.base.pastDOMInformation.nextSibling);
-	      return child;
-	    }
-	  }, {
-	    key: '__getComponentManager',
-	    value: function __getComponentManager() {
-	      var componentDataFrom = this.instruction && this.base.execStatement(this.instruction.value);
-	      var componentName = this.base.pastDOMInformation.nodeName.toLowerCase();
-	      var componentManager = null;
-
-	      if (componentName === ComponentWatcher.nodeName) {
-	        if (typeof componentDataFrom === 'string') {
-	          if (this.base.components && this.base.components[componentDataFrom]) {
-	            componentManager = this.base.components[componentDataFrom];
-	          } else if (ComponentWatcher.components[componentDataFrom]) {
-	            componentManager = ComponentWatcher.components[componentDataFrom];
-	          }
-	        } else if (componentDataFrom instanceof _ComponentManager.ComponentManager) {
-	          componentManager = componentDataFrom;
-	        }
-	      } else {
-	        if (this.base.components && this.base.components[componentName]) {
-	          componentManager = this.base.components[componentName];
-	        } else if (ComponentWatcher.components[componentName]) {
-	          componentManager = ComponentWatcher.components[componentName];
-	        }
-	      }
-
-	      return componentManager;
-	    }
-	  }, {
-	    key: '__getInstruction',
-	    value: function __getInstruction() {
-	      return this.base.__filterAttr(ComponentWatcher.instructions, true)[0];
-	    }
-	  }, {
-	    key: '__getProps',
-	    value: function __getProps() {
-	      var _this3 = this;
-
-	      var props = this.base.__filterAttr(ComponentWatcher.instructions, false);
-	      var obProps = [],
-	          normalProps = [];
-	      props.forEach(function (prop) {
-	        var parsed = _this3.base.statementExtract(prop.value);
-	        var type = null,
-	            ob = false;
-	        var obj = {};
-	        obj.name = (0, _utilityFunc.toHump)(prop.name);
-	        obj.value = parsed.map(function (item) {
-	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE || item.type === _statementExtract.ONCE_STATEMENT_TYPE) {
-	            ob = true;
-	          }
-	          return item;
-	        });
-	        if (ob === true) {
-	          obProps.push(obj);
-	        } else {
-	          normalProps.push(obj);
-	        }
-	      });
-	      return { obProps: obProps, normalProps: normalProps };
-	    }
-	  }, {
-	    key: '__getModel',
-	    value: function __getModel() {
-	      var instructionModel = this.__getInstructionsModel(),
-	          propsModel = this.__getPropsModel();
-	      return instructionModel.concat(propsModel);
-	    }
-	  }, {
-	    key: '__getInstructionsModel',
-	    value: function __getInstructionsModel() {
-	      var res = [];
-	      this.instruction && this.base.modelExtract(this.instruction.value).forEach(function (item) {
-	        res.push(item.value);
-	      });
-	      return res;
-	    }
-	  }, {
-	    key: '__getPropsModel',
-	    value: function __getPropsModel() {
-	      var _this4 = this;
-
-	      var res = [];
-	      this.props.obProps.forEach(function (prop) {
-	        prop.value.forEach(function (item) {
-	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE) {
-	            _this4.base.modelExtract(item.value).forEach(function (model) {
-	              res.push(model.value);
-	            });
-	          }
-	        });
-	      });
-	      return res;
-	    }
-	  }]);
-
-	  return ComponentWatcher;
-	}();
-
-	ComponentWatcher.nodeName = 'component';
-	ComponentWatcher.instructions = ['data-from'];
-	ComponentWatcher.components = {};
-	exports.default = ComponentWatcher;
-
-/***/ },
-/* 4 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.ComponentManager = undefined;
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	exports.createComponentManager = createComponentManager;
-
-	var _Component = __webpack_require__(1);
-
-	var _Component2 = _interopRequireDefault(_Component);
-
-	var _checkComponentName = __webpack_require__(5);
-
-	var _checkComponentName2 = _interopRequireDefault(_checkComponentName);
-
-	var _utilityFunc = __webpack_require__(2);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var ComponentManager = exports.ComponentManager = function () {
-	  function ComponentManager(id, componentInf) {
-	    _classCallCheck(this, ComponentManager);
-
-	    this.id = id;
-	    this.componentInf = componentInf;
-	    this.trackingUpdate = null;
-	  }
-
-	  _createClass(ComponentManager, [{
-	    key: 'createComponent',
-	    value: function createComponent() {
-	      var component = new _Component2.default();
-	      component = (0, _utilityFunc.objectAssign)(component, (0, _utilityFunc.deepClone)(this.componentInf));
-	      component.components = this.componentInf.components;
-	      var scope = createScope(component);
-	      bindComponentFunc(component.data, scope);
-	      checkComponentsName(component.components);
-	      return component;
-	    }
-	  }]);
-
-	  return ComponentManager;
-	}();
-
-	function createScope(component) {
-	  return {
-	    data: component.data,
-	    trackingUpdate: component.trackingUpdate.bind(component)
-	  };
-	}
-
-	function bindComponentFunc(data, scope) {
-	  for (var key in data) {
-	    if ((0, _utilityFunc.is)(data[key], 'function')) {
-	      data[key] = data[key].bind(scope);
-	    }
-	  }
-	}
-
-	function checkComponentsName(components) {
-	  for (var key in components) {
-	    (0, _checkComponentName2.default)(key);
-	  }
-	}
-
-	function createComponentManager(componentInf) {
-	  return new ComponentManager((0, _utilityFunc.randomId)(), componentInf);
-	}
-
-/***/ },
-/* 5 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = checkComponentName;
-
-	var _utilityFunc = __webpack_require__(2);
-
-	function checkComponentName(componentName) {
-	  for (var i = 0, len = componentName.length; i < len; i++) {
-	    var code = componentName.charCodeAt(i);
-	    if (code >= 65 && code <= 90) throw new SyntaxError('Unexpected token ' + componentName + ', You should not use an uppercase component name');
-	  }
-	  var dom = document.createElement(componentName);
-	  if (!(0, _utilityFunc.is)(dom, 'HTMLUnknownElement')) throw new SyntaxError('Unexpected token ' + componentName + ', You should not use the tag name that already exists in HTML');
-	}
-
-/***/ },
-/* 6 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.resetStatementSyb = resetStatementSyb;
-	exports.default = statementExtract;
-	var NOR_STATEMENT = {
-	  start: '{{',
-	  end: '}}'
-	};
-	var ONCE_STATEMENT = {
-	  start: '{{{',
-	  end: '}}}'
-	};
-	var MARKS = /['"]/;
-
-	var NOR_STATEMENT_TYPE = exports.NOR_STATEMENT_TYPE = 'normalStatement';
-	var ONCE_STATEMENT_TYPE = exports.ONCE_STATEMENT_TYPE = 'onceStatement';
-	var CONST_STRING = exports.CONST_STRING = 'constString';
-
-	var checkNorStart = checkStatement(NOR_STATEMENT.start);
-	var checkNorEnd = checkStatement(NOR_STATEMENT.end);
-	var checkOnceStart = checkStatement(ONCE_STATEMENT.start);
-	var checkOnceEnd = checkStatement(ONCE_STATEMENT.end);
-
-	function checkStatement(statementSyb) {
-	  return function (str, index) {
-	    var i = 0,
-	        len = statementSyb.length;
-	    for (; i < len; i++, index++) {
-	      if (str[index] !== statementSyb[i]) return -1;
-	    }
-	    return i - 1;
-	  };
-	}
-
-	function resetStatementSyb(type, sybObj) {
-	  if (type === NOR_STATEMENT_TYPE) {
-	    target = NOR_STATEMENT;
-	  } else if (type === ONCE_STATEMENT_TYPE) {
-	    target = ONCE_STATEMENT;
-	  } else {
-	    throw new TypeError('type need to be normalStatement or onceStatement');
-	  }
-	  target.start = sybObj.start;
-	  target.end = sybObj.end;
-	}
-
-	function statementExtract(str) {
-	  var len = str.length;
-	  var res = [];
-	  var stmStack = [];
-	  var mrkStack = [];
-
-	  var i = -1,
-	      p = 0;
-
-	  while (++i < len) {
-	    var char = str[i];
-	    var mrkLen = mrkStack.length;
-	    var stmLen = stmStack.length;
-	    if (mrkLen === 0) {
-	      var norStart = checkNorStart(str, i);
-	      var onceStart = checkOnceStart(str, i);
-	      var norEnd = checkNorEnd(str, i);
-	      var onceEnd = checkOnceEnd(str, i);
-
-	      if (norStart > -1 && onceStart === -1) {
-	        stmStack.push(NOR_STATEMENT_TYPE);
-	        if (stmLen === 0) i += norStart;
-	      } else if (onceStart > -1) {
-	        stmStack.push(ONCE_STATEMENT_TYPE);
-	        if (stmLen === 0) i += onceStart;
-	      }
-	      if (norStart > -1 || onceStart > -1) {
-	        if (stmLen === 0) {
-	          res[p] && p++;
-	        } else {
-	          res[p].value += str.slice(i, i += norStart > -1 ? norStart : onceStart);
-	        }
-	        continue;
-	      }
-
-	      if (norEnd > -1 && stmStack[stmLen - 1] === NOR_STATEMENT_TYPE || onceEnd > -1 && stmStack[stmLen - 1] === ONCE_STATEMENT_TYPE) {
-	        stmStack.pop();
-	        if (stmLen === 1) {
-	          i += norEnd > -1 ? norEnd : onceEnd;
-	          p++;
-	        } else {
-	          res[p].value += str.slice(i, i += norEnd > -1 ? norEnd : onceEnd);
-	        }
-	        continue;
-	      }
-	    }
-
-	    if (!res[p]) {
-	      res[p] = {
-	        type: stmLen === 0 ? CONST_STRING : stmStack[0],
-	        value: ''
-	      };
-	    }
-	    if (MARKS.test(char) && stmLen.length > 0) {
-	      if (mrkLen > 0) {
-	        if (str[i - 1] !== '\\') {
-	          mrkStack.pop();
-	        }
-	      } else {
-	        mrkStack.push(char);
-	      }
-	    }
-	    res[p].value += char;
-	  }
-
-	  if (mrkStack.length !== 0) {
-	    throw new SyntaxError('Unexpected ' + mrkStack.pop());
-	  }
-	  return res;
-	}
-
-/***/ },
-/* 7 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.set = set;
-	exports.get = get;
-	exports.all = all;
-	exports.deleteOne = deleteOne;
-	exports.deleteAll = deleteAll;
-
-	var _BaseWatcher = __webpack_require__(8);
+	var _BaseWatcher = __webpack_require__(4);
 
 	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
 
+	var _utilityFunc = __webpack_require__(2);
+
+	var _modelSettlement = __webpack_require__(6);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-	var modelSettlement = {};
+	var Watch = function () {
+	    function Watch(DOM, data) {
+	        _classCallCheck(this, Watch);
 
-	function set(modelExtractId, key, watcher) {
-	  if (!(watcher instanceof _BaseWatcher2.default)) throw new TypeError('watcher must extends from BaseWatcher');
-	  if (!modelSettlement[modelExtractId]) {
-	    modelSettlement[modelExtractId] = {};
-	  }
-	  var target = modelSettlement[modelExtractId];
-	  if (target[key]) {
-	    target[key][watcher.obId] = watcher;
-	  } else {
-	    target[key] = _defineProperty({}, watcher.obId, watcher);
-	  }
-	}
-	function get(modelExtractId, key) {
-	  return modelSettlement[modelExtractId] && modelSettlement[modelExtractId][key] || null;
-	}
-	function all(modelExtractId) {
-	  return modelSettlement[modelExtractId];
-	}
-	function deleteOne(modelExtractId, key) {
-	  delete modelSettlement[modelExtractId][key];
-	}
-	function deleteAll(modelExtractId) {
-	  modelSettlement[modelExtractId] = null;
-	}
+	        this.DOM = DOM;
+	        this.data = data;
+	        this.modelId = (0, _utilityFunc.randomId)();
+	        this.init();
+	    }
+
+	    _createClass(Watch, [{
+	        key: 'init',
+	        value: function init() {
+	            var _this = this;
+
+	            (0, _utilityFunc.delay)(function () {
+	                _this.watcher = new _BaseWatcher2.default(_this.DOM, _this.data, null, null, _this.modelId);
+	            });
+	        }
+	    }]);
+
+	    return Watch;
+	}();
+
+	exports.default = Watch;
 
 /***/ },
-/* 8 */
+/* 4 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -829,23 +334,23 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _ManagerWatcher = __webpack_require__(9);
+	var _ManagerWatcher = __webpack_require__(5);
 
 	var _ManagerWatcher2 = _interopRequireDefault(_ManagerWatcher);
 
-	var _ElementWatcher = __webpack_require__(11);
+	var _ElementWatcher = __webpack_require__(8);
 
 	var _ElementWatcher2 = _interopRequireDefault(_ElementWatcher);
 
-	var _ComponentWatcher = __webpack_require__(3);
+	var _ComponentWatcher = __webpack_require__(11);
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _TextWatcher = __webpack_require__(13);
+	var _TextWatcher = __webpack_require__(14);
 
 	var _TextWatcher2 = _interopRequireDefault(_TextWatcher);
 
-	var _modelExtract2 = __webpack_require__(15);
+	var _modelExtract2 = __webpack_require__(16);
 
 	var _modelExtract3 = _interopRequireDefault(_modelExtract2);
 
@@ -853,11 +358,11 @@
 
 	var _runResetWatcher3 = _interopRequireDefault(_runResetWatcher2);
 
-	var _statementExtract2 = __webpack_require__(6);
+	var _statementExtract2 = __webpack_require__(10);
 
 	var _statementExtract3 = _interopRequireDefault(_statementExtract2);
 
-	var _modelSettlement = __webpack_require__(7);
+	var _modelSettlement = __webpack_require__(6);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -1095,7 +600,7 @@
 	exports.default = BaseWatcher;
 
 /***/ },
-/* 9 */
+/* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1108,9 +613,9 @@
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _modelSettlement = __webpack_require__(7);
+	var _modelSettlement = __webpack_require__(6);
 
-	var _traversalVector = __webpack_require__(10);
+	var _traversalVector = __webpack_require__(7);
 
 	var _traversalVector2 = _interopRequireDefault(_traversalVector);
 
@@ -1269,7 +774,57 @@
 	exports.default = ManagerWatcher;
 
 /***/ },
-/* 10 */
+/* 6 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.set = set;
+	exports.get = get;
+	exports.all = all;
+	exports.deleteOne = deleteOne;
+	exports.deleteAll = deleteAll;
+
+	var _BaseWatcher = __webpack_require__(4);
+
+	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+	var modelSettlement = {};
+
+	function set(modelExtractId, key, watcher) {
+	  if (!(watcher instanceof _BaseWatcher2.default)) throw new TypeError('watcher must extends from BaseWatcher');
+	  if (!modelSettlement[modelExtractId]) {
+	    modelSettlement[modelExtractId] = {};
+	  }
+	  var target = modelSettlement[modelExtractId];
+	  if (target[key]) {
+	    target[key][watcher.obId] = watcher;
+	  } else {
+	    target[key] = _defineProperty({}, watcher.obId, watcher);
+	  }
+	}
+	function get(modelExtractId, key) {
+	  return modelSettlement[modelExtractId] && modelSettlement[modelExtractId][key] || null;
+	}
+	function all(modelExtractId) {
+	  return modelSettlement[modelExtractId];
+	}
+	function deleteOne(modelExtractId, key) {
+	  delete modelSettlement[modelExtractId][key];
+	}
+	function deleteAll(modelExtractId) {
+	  modelSettlement[modelExtractId] = null;
+	}
+
+/***/ },
+/* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1300,7 +855,7 @@
 	}
 
 /***/ },
-/* 11 */
+/* 8 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1313,11 +868,11 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _Event = __webpack_require__(12);
+	var _Event = __webpack_require__(9);
 
 	var _utilityFunc = __webpack_require__(2);
 
-	var _statementExtract = __webpack_require__(6);
+	var _statementExtract = __webpack_require__(10);
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
@@ -1704,7 +1259,7 @@
 	exports.default = ElementWatcher;
 
 /***/ },
-/* 12 */
+/* 9 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1764,7 +1319,131 @@
 	}
 
 /***/ },
-/* 13 */
+/* 10 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.resetStatementSyb = resetStatementSyb;
+	exports.default = statementExtract;
+	var NOR_STATEMENT = {
+	  start: '{{',
+	  end: '}}'
+	};
+	var ONCE_STATEMENT = {
+	  start: '{{{',
+	  end: '}}}'
+	};
+	var MARKS = /['"]/;
+
+	var NOR_STATEMENT_TYPE = exports.NOR_STATEMENT_TYPE = 'normalStatement';
+	var ONCE_STATEMENT_TYPE = exports.ONCE_STATEMENT_TYPE = 'onceStatement';
+	var CONST_STRING = exports.CONST_STRING = 'constString';
+
+	var checkNorStart = checkStatement(NOR_STATEMENT.start);
+	var checkNorEnd = checkStatement(NOR_STATEMENT.end);
+	var checkOnceStart = checkStatement(ONCE_STATEMENT.start);
+	var checkOnceEnd = checkStatement(ONCE_STATEMENT.end);
+
+	function checkStatement(statementSyb) {
+	  return function (str, index) {
+	    var i = 0,
+	        len = statementSyb.length;
+	    for (; i < len; i++, index++) {
+	      if (str[index] !== statementSyb[i]) return -1;
+	    }
+	    return i - 1;
+	  };
+	}
+
+	function resetStatementSyb(type, sybObj) {
+	  if (type === NOR_STATEMENT_TYPE) {
+	    target = NOR_STATEMENT;
+	  } else if (type === ONCE_STATEMENT_TYPE) {
+	    target = ONCE_STATEMENT;
+	  } else {
+	    throw new TypeError('type need to be normalStatement or onceStatement');
+	  }
+	  target.start = sybObj.start;
+	  target.end = sybObj.end;
+	}
+
+	function statementExtract(str) {
+	  var len = str.length;
+	  var res = [];
+	  var stmStack = [];
+	  var mrkStack = [];
+
+	  var i = -1,
+	      p = 0;
+
+	  while (++i < len) {
+	    var char = str[i];
+	    var mrkLen = mrkStack.length;
+	    var stmLen = stmStack.length;
+	    if (mrkLen === 0) {
+	      var norStart = checkNorStart(str, i);
+	      var onceStart = checkOnceStart(str, i);
+	      var norEnd = checkNorEnd(str, i);
+	      var onceEnd = checkOnceEnd(str, i);
+
+	      if (norStart > -1 && onceStart === -1) {
+	        stmStack.push(NOR_STATEMENT_TYPE);
+	        if (stmLen === 0) i += norStart;
+	      } else if (onceStart > -1) {
+	        stmStack.push(ONCE_STATEMENT_TYPE);
+	        if (stmLen === 0) i += onceStart;
+	      }
+	      if (norStart > -1 || onceStart > -1) {
+	        if (stmLen === 0) {
+	          res[p] && p++;
+	        } else {
+	          res[p].value += str.slice(i, i += norStart > -1 ? norStart : onceStart);
+	        }
+	        continue;
+	      }
+
+	      if (norEnd > -1 && stmStack[stmLen - 1] === NOR_STATEMENT_TYPE || onceEnd > -1 && stmStack[stmLen - 1] === ONCE_STATEMENT_TYPE) {
+	        stmStack.pop();
+	        if (stmLen === 1) {
+	          i += norEnd > -1 ? norEnd : onceEnd;
+	          p++;
+	        } else {
+	          res[p].value += str.slice(i, i += norEnd > -1 ? norEnd : onceEnd);
+	        }
+	        continue;
+	      }
+	    }
+
+	    if (!res[p]) {
+	      res[p] = {
+	        type: stmLen === 0 ? CONST_STRING : stmStack[0],
+	        value: ''
+	      };
+	    }
+	    if (MARKS.test(char) && stmLen.length > 0) {
+	      if (mrkLen > 0) {
+	        if (str[i - 1] !== '\\') {
+	          mrkStack.pop();
+	        }
+	      } else {
+	        mrkStack.push(char);
+	      }
+	    }
+	    res[p].value += char;
+	  }
+
+	  if (mrkStack.length !== 0) {
+	    throw new SyntaxError('Unexpected ' + mrkStack.pop());
+	  }
+	  return res;
+	}
+
+/***/ },
+/* 11 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1775,11 +1454,399 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _statementToString = __webpack_require__(14);
+	var _Component = __webpack_require__(1);
+
+	var _Component2 = _interopRequireDefault(_Component);
+
+	var _ComponentManager = __webpack_require__(12);
+
+	var _utilityFunc = __webpack_require__(2);
+
+	var _statementExtract = __webpack_require__(10);
+
+	var _modelSettlement = __webpack_require__(6);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var ComponentWatcher = function () {
+	  function ComponentWatcher(base, BaseWatcher) {
+	    _classCallCheck(this, ComponentWatcher);
+
+	    this.base = base;
+	    this.BaseWatcher = BaseWatcher;
+	    this.modelExtractId = (0, _utilityFunc.randomId)();
+	    this.instructions = this.__getInstructions();
+	    this.props = this.__getProps();
+	    this.model = this.__getModel();
+	    this.componentManager = this.__getComponentManager();
+	    this.component = this.componentManager && this.componentManager.createComponent();
+	    this.__removeRootNode();
+	  }
+
+	  _createClass(ComponentWatcher, [{
+	    key: 'destructor',
+	    value: function destructor() {
+	      this.childWatcher && this.childWatcher.forEach(function (item) {
+	        item.destructor();
+	      });
+	      (0, _modelSettlement.deleteAll)(this.modelExtractId);
+	      this.childWatcher = [];
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+
+	      if (!this.componentManager) return;
+	      this.resolvedProps = this.__bindProps();
+	      this.component.init(this.base, this.resolvedProps);
+	      this.child = this.__renderComponent();
+	      this.component.setDOMElement(this.child);
+	      this.component.willMount();
+	      this.data = (0, _utilityFunc.objectAssign)({}, this.component.props, this.component.data);
+	      this.childWatcher = this.__setChildWatcher();
+	      this.component.didMount();
+	      cb();
+	    }
+	  }, {
+	    key: 'reset',
+	    value: function reset() {
+	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
+	      var prevData = arguments[1];
+	      var nextData = arguments[2];
+
+	      var componentManager = this.__getComponentManager();
+	      if (componentManager && (!this.componentManager || componentManager.id !== this.componentManager.id)) {
+	        this.componentManager = componentManager;
+	        this.component = this.componentManager.createComponent();
+	        this.destructor();
+	        this.render(cb);
+	      } else if (!componentManager) {
+	        this.destructor();
+	      } else {
+	        var oldProps = this.resolvedProps;
+	        var resetWatcherList = [];
+	        this.resolvedProps = this.__bindProps();
+	        if (!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
+	          return;
+	        }
+	        this.component.setProps(this.resolvedProps);
+	        this.component.willUpdate(oldProps, this.resolvedProps);
+	        for (var key in oldProps) {
+	          if (oldProps[key] !== this.component.props[key]) {
+	            var _cb = (0, _modelSettlement.get)(this.modelExtractId, key);
+	            this.data[key] = this.component.props[key];
+	            _cb && resetWatcherList.push(_cb);
+	          }
+	        }
+	        for (var _key in this.component.data) {
+	          if (this.component.data[_key] !== this.data[_key]) {
+	            var _cb2 = (0, _modelSettlement.get)(this.modelExtractId, _key);
+	            this.data[_key] = this.component.data[_key];
+	            _cb2 && resetWatcherList.push(_cb2);
+	          }
+	        }
+	        this.base.runResetWatcher(resetWatcherList, this.data, cb);
+	      }
+	    }
+	  }, {
+	    key: '__removeRootNode',
+	    value: function __removeRootNode() {
+	      var element = this.base.element;
+	      element.parentNode.removeChild(element);
+	    }
+	  }, {
+	    key: '__setChildWatcher',
+	    value: function __setChildWatcher() {
+	      var _this = this;
+
+	      var previous = null;
+	      return this.child.map(function (item, index) {
+	        return new _this.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this.data), previous, null, _this.modelExtractId, _this.component.components, _this.base, _this.base.getChildId(index));
+	        previous = item;
+	      });
+	    }
+	  }, {
+	    key: '__bindProps',
+	    value: function __bindProps() {
+	      var _this2 = this;
+
+	      var props = {};
+	      this.props.normalProps.forEach(function (item) {
+	        props[item.name] = item.value[0].value;
+	      });
+	      this.props.obProps.forEach(function (prop) {
+	        var str = null;
+	        prop.value.forEach(function (item) {
+	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE || item.type === _statementExtract.ONCE_STATEMENT_TYPE) {
+	            var val = _this2.base.execStatement(item.value);
+	            if (str === null) {
+	              str = val;
+	            } else {
+	              str += val;
+	            }
+	          } else {
+	            if (str === null) {
+	              str = item.value;
+	            } else {
+	              str += item.value;
+	            }
+	          }
+	        });
+	        props[prop.name] = str;
+	      });
+	      return props;
+	    }
+	  }, {
+	    key: '__renderComponent',
+	    value: function __renderComponent() {
+	      if (!this.component) return;
+	      var frg = document.createDocumentFragment();
+	      var template = document.createElement('div');
+	      var parent = this.base.pastDOMInformation.parentNode;
+	      if (typeof this.component.template === 'string') {
+	        template.innerHTML = this.component.template;
+	      } else if (typeof this.component.template === 'function') {
+	        template.innerHTML = this.component.template();
+	      }
+	      var child = (0, _utilityFunc.toArray)(template.childNodes);
+	      while (template.childNodes[0]) {
+	        frg.appendChild(template.childNodes[0]);
+	      }
+	      parent.insertBefore(frg, this.base.pastDOMInformation.nextSibling);
+	      return child;
+	    }
+	  }, {
+	    key: '__getComponentManager',
+	    value: function __getComponentManager() {
+	      var componentDataFrom = this.base.execStatement(this.instructions[ComponentWatcher.instructions[0]]);
+	      var componentName = this.base.pastDOMInformation.nodeName.toLowerCase();
+	      var componentManager = null;
+
+	      if (componentName === ComponentWatcher.nodeName) {
+	        if (typeof componentDataFrom === 'string') {
+	          if (this.base.components && this.base.components[componentDataFrom]) {
+	            componentManager = this.base.components[componentDataFrom];
+	          } else if (ComponentWatcher.components[componentDataFrom]) {
+	            componentManager = ComponentWatcher.components[componentDataFrom];
+	          }
+	        } else if (componentDataFrom instanceof _ComponentManager.ComponentManager) {
+	          componentManager = componentDataFrom;
+	        }
+	      } else {
+	        if (this.base.components && this.base.components[componentName]) {
+	          componentManager = this.base.components[componentName];
+	        } else if (ComponentWatcher.components[componentName]) {
+	          componentManager = ComponentWatcher.components[componentName];
+	        }
+	      }
+
+	      return componentManager;
+	    }
+	  }, {
+	    key: '__getInstructions',
+	    value: function __getInstructions() {
+	      var ins = {};
+	      this.base.__filterAttr(ComponentWatcher.instructions, true).forEach(function (item) {
+	        ins[item.name] = item.value;
+	      });
+	      return ins;
+	    }
+	  }, {
+	    key: '__getProps',
+	    value: function __getProps() {
+	      var _this3 = this;
+
+	      var props = this.base.__filterAttr(ComponentWatcher.instructions, false);
+	      var obProps = [],
+	          normalProps = [];
+	      props.forEach(function (prop) {
+	        var parsed = _this3.base.statementExtract(prop.value);
+	        var type = null,
+	            ob = false;
+	        var obj = {};
+	        obj.name = (0, _utilityFunc.toHump)(prop.name);
+	        obj.value = parsed.map(function (item) {
+	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE || item.type === _statementExtract.ONCE_STATEMENT_TYPE) {
+	            ob = true;
+	          }
+	          return item;
+	        });
+	        if (ob === true) {
+	          obProps.push(obj);
+	        } else {
+	          normalProps.push(obj);
+	        }
+	      });
+	      return { obProps: obProps, normalProps: normalProps };
+	    }
+	  }, {
+	    key: '__getModel',
+	    value: function __getModel() {
+	      var instructionModel = this.__getInstructionsModel(),
+	          propsModel = this.__getPropsModel();
+	      return instructionModel.concat(propsModel);
+	    }
+	  }, {
+	    key: '__getInstructionsModel',
+	    value: function __getInstructionsModel() {
+	      var res = [];
+	      for (var key in this.instructions) {
+	        this.base.modelExtract(this.instructions[key]).forEach(function (item) {
+	          res.push(item.value);
+	        });
+	      }
+	      return res;
+	    }
+	  }, {
+	    key: '__getPropsModel',
+	    value: function __getPropsModel() {
+	      var _this4 = this;
+
+	      var res = [];
+	      this.props.obProps.forEach(function (prop) {
+	        prop.value.forEach(function (item) {
+	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE) {
+	            _this4.base.modelExtract(item.value).forEach(function (model) {
+	              res.push(model.value);
+	            });
+	          }
+	        });
+	      });
+	      return res;
+	    }
+	  }]);
+
+	  return ComponentWatcher;
+	}();
+
+	ComponentWatcher.nodeName = 'component';
+	ComponentWatcher.instructions = ['data-from', 'data-props'];
+	ComponentWatcher.components = {};
+	exports.default = ComponentWatcher;
+
+/***/ },
+/* 12 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.ComponentManager = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	exports.createComponentManager = createComponentManager;
+
+	var _Component = __webpack_require__(1);
+
+	var _Component2 = _interopRequireDefault(_Component);
+
+	var _checkComponentName = __webpack_require__(13);
+
+	var _checkComponentName2 = _interopRequireDefault(_checkComponentName);
+
+	var _utilityFunc = __webpack_require__(2);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	var ComponentManager = exports.ComponentManager = function () {
+	  function ComponentManager(id, componentInf) {
+	    _classCallCheck(this, ComponentManager);
+
+	    this.id = id;
+	    this.componentInf = componentInf;
+	    this.trackingUpdate = null;
+	  }
+
+	  _createClass(ComponentManager, [{
+	    key: 'createComponent',
+	    value: function createComponent() {
+	      var component = new _Component2.default();
+	      component = (0, _utilityFunc.objectAssign)(component, (0, _utilityFunc.deepClone)(this.componentInf));
+	      component.components = this.componentInf.components;
+	      var scope = createScope(component);
+	      bindComponentFunc(component.data, scope);
+	      checkComponentsName(component.components);
+	      return component;
+	    }
+	  }]);
+
+	  return ComponentManager;
+	}();
+
+	function createScope(component) {
+	  return {
+	    data: component.data,
+	    trackingUpdate: component.trackingUpdate.bind(component)
+	  };
+	}
+
+	function bindComponentFunc(data, scope) {
+	  for (var key in data) {
+	    if ((0, _utilityFunc.is)(data[key], 'function')) {
+	      data[key] = data[key].bind(scope);
+	    }
+	  }
+	}
+
+	function checkComponentsName(components) {
+	  for (var key in components) {
+	    (0, _checkComponentName2.default)(key);
+	  }
+	}
+
+	function createComponentManager(componentInf) {
+	  return new ComponentManager((0, _utilityFunc.randomId)(), componentInf);
+	}
+
+/***/ },
+/* 13 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = checkComponentName;
+
+	var _utilityFunc = __webpack_require__(2);
+
+	function checkComponentName(componentName) {
+	  for (var i = 0, len = componentName.length; i < len; i++) {
+	    var code = componentName.charCodeAt(i);
+	    if (code >= 65 && code <= 90) throw new SyntaxError('Unexpected token ' + componentName + ', You should not use an uppercase component name');
+	  }
+	  var dom = document.createElement(componentName);
+	  // if(!is(dom, 'HTMLUnknownElement')) {
+	  //   throw new SyntaxError(`Unexpected token ${componentName}, You should not use the tag name that already exists in HTML`);
+	  // }
+	}
+
+/***/ },
+/* 14 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _statementToString = __webpack_require__(15);
 
 	var _statementToString2 = _interopRequireDefault(_statementToString);
 
-	var _statementExtract = __webpack_require__(6);
+	var _statementExtract = __webpack_require__(10);
 
 	var _utilityFunc = __webpack_require__(2);
 
@@ -1892,7 +1959,7 @@
 	exports.default = TextWatcher;
 
 /***/ },
-/* 14 */
+/* 15 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1921,7 +1988,7 @@
 	}
 
 /***/ },
-/* 15 */
+/* 16 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2013,56 +2080,6 @@
 	exports.default = modelExtract;
 
 /***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	    value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _BaseWatcher = __webpack_require__(8);
-
-	var _BaseWatcher2 = _interopRequireDefault(_BaseWatcher);
-
-	var _utilityFunc = __webpack_require__(2);
-
-	var _modelSettlement = __webpack_require__(7);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	var Watch = function () {
-	    function Watch(DOM, data) {
-	        _classCallCheck(this, Watch);
-
-	        this.DOM = DOM;
-	        this.data = data;
-	        this.modelId = (0, _utilityFunc.randomId)();
-	        this.init();
-	    }
-
-	    _createClass(Watch, [{
-	        key: 'init',
-	        value: function init() {
-	            var _this = this;
-
-	            (0, _utilityFunc.delay)(function () {
-	                _this.watcher = new _BaseWatcher2.default(_this.DOM, _this.data, null, null, _this.modelId);
-	            });
-	        }
-	    }]);
-
-	    return Watch;
-	}();
-
-	exports.default = Watch;
-
-/***/ },
 /* 17 */
 /***/ function(module, exports) {
 
@@ -2099,11 +2116,11 @@
 	});
 	exports.default = registerComponent;
 
-	var _ComponentWatcher = __webpack_require__(3);
+	var _ComponentWatcher = __webpack_require__(11);
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _checkComponentName = __webpack_require__(5);
+	var _checkComponentName = __webpack_require__(13);
 
 	var _checkComponentName2 = _interopRequireDefault(_checkComponentName);
 
