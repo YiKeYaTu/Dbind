@@ -6,6 +6,7 @@ import ComponentWatcher from '../componentWatcher/ComponentWatcher';
 import TextWatcher from '../textWatcher/TextWatcher';
 
 import modelExtract from '../../parser/modelExtract';
+import runResetWatcher from './runResetWatcher';
 import statementExtract from '../../parser/statementExtract';
 
 import { set, get } from '../../model/modelSettlement';
@@ -25,7 +26,7 @@ export default class BaseWatcher {
     this.parentWatcher = parentWatcher;
     this.obdata = obdata;
     this.previous = previous;
-    this.rendering = false;
+    this.rendering = null;
     this.hasDelete = false;
     this.modelExtractId = modelExtractId;
     this.pastDOMInformation = this.__getPastDOMInformation();
@@ -43,12 +44,11 @@ export default class BaseWatcher {
     this.obwatcher.render();
   }
   reset(data, cb = () => { }) {
-    if (this.rendering === true) {
-      return;
+    if (this.rendering !== null) {
+      clearTimeout(this.rendering);
     }
     const prevData = objectAssign({}, this.obdata);
     const nextData = objectAssign({}, this.obdata);
-    this.rendering = true;
     if (typeof data !== 'object') {
       throw new TypeError('data is not a object');
     } else {
@@ -57,11 +57,11 @@ export default class BaseWatcher {
       }
     }
     this.obdata = nextData;
-    delay((time) => {
+    this.rendering = delay((time) => {
       if(!this.hasDelete) {
         this.obwatcher.reset(cb, prevData, nextData);
-        this.rendering = false;
       }
+      this.rendering = null;
       cb();
     });
   }
@@ -72,18 +72,10 @@ export default class BaseWatcher {
         resetWatcherList.push(get(this.modelExtractId, key));
       }
     }
-    let count = 0, len = 0;
-    resetWatcherList.forEach((items) => {
-      items && items.forEach(item => {
-        len ++;
-        item.reset(data, () => {
-          count ++;
-          if(count === len) {
-            cb();
-          }
-        });
-      });
-    })
+    this.runResetWatcher(resetWatcherList, data, cb);
+  }
+  runResetWatcher(resetWatcherList, data, cb) {
+    runResetWatcher(resetWatcherList, data, cb);
   }
   __getWatcher() {
     let watcherClass = null;
@@ -122,9 +114,7 @@ export default class BaseWatcher {
       }
       if (isManagerWatcher) {
         return BaseWatcher.ManagerWatcher;
-      } else if (ComponentWatcher.nodeNames.indexOf(NODE_NAME) > -1 || (this.components && this.components[NODE_NAME])) {
-        return BaseWatcher.ComponentWatcher;
-      } else if (ComponentWatcher.components[NODE_NAME]) {
+      } else if (ComponentWatcher.nodeName === NODE_NAME || ComponentWatcher.components[NODE_NAME] || (this.components && this.components[NODE_NAME])) {
         return BaseWatcher.ComponentWatcher;
       } else {
         return BaseWatcher.ElementWatcher;

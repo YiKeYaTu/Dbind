@@ -1,15 +1,14 @@
 import Component from '../component/Component';
-import ComponentWatcher from '../watcher/componentWatcher/ComponentWatcher';
 import ObserverWatch from './ObserverWatch';
+import registerComponent from '../component/registerComponent';
 import { createComponentManager } from '../component/ComponentManager';
-import { objectAssign } from '../utilityFunc/utilityFunc';
 
 const Observer = {
   createClass(componentInf) {
     return createComponentManager(componentInf);
   },
   registerComponent(key, component) {
-    ComponentWatcher.components[key] = component;
+    return registerComponent(key, component);
   },
   watch(element, data) {
     return new ObserverWatch(...arguments);

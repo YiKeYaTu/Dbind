@@ -3,9 +3,12 @@ export function toArray(arrayLike) {
 }
 export function delay(fn) {
   const t = Date.now();
-  setTimeout(function () {
+  return setTimeout(function () {
     fn(Date.now() - t);
   });
+}
+export function clearDelay(delay) {
+  clearTimeout(delay);
 }
 export function is(target, type) {
   return Object.prototype.toString.call(target).toLowerCase() === `[object ${type.toLowerCase()}]`;

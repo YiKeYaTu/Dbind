@@ -7,7 +7,7 @@ import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../par
 import { all, get, deleteAll } from '../../model/modelSettlement';
 
 export default class ComponentWatcher {
-  static nodeNames = ['component'];
+  static nodeName = 'component';
   static instructions = ['data-from'];
   static components = {};
   constructor(base, BaseWatcher) {
@@ -71,18 +71,7 @@ export default class ComponentWatcher {
           cb && resetWatcherList.push(cb);
         }
       }
-      let count = 0, len = 0;
-      resetWatcherList.forEach((items) => {
-        items && items.forEach((item) => {
-          len ++;
-          item.reset(this.data, () => {
-            count ++;
-            if(count === len) {
-              cb();
-            }
-          });
-        });
-      })
+      this.base.runResetWatcher(resetWatcherList, this.data, cb);
     }
   }
   __removeRootNode() {
@@ -146,17 +135,28 @@ export default class ComponentWatcher {
     return child;
   }
   __getComponentManager() {
-    const componentDataFrom = this.base.execStatement(this.instruction.value);
+    const componentDataFrom = this.instruction && this.base.execStatement(this.instruction.value);
+    const componentName = this.base.pastDOMInformation.nodeName.toLowerCase();
     let componentManager = null;
-    if (typeof componentDataFrom === 'string') {
-      if (ComponentWatcher.components[componentDataFrom]) {
-        componentManager = ComponentWatcher.components[componentDataFrom];
-      } else if (this.base.components[componentDataFrom]) {
-        componentManager = this.base.components[componentDataFrom];
+
+    if(componentName === ComponentWatcher.nodeName) {
+      if (typeof componentDataFrom === 'string') {
+        if (this.base.components && this.base.components[componentDataFrom]) {
+          componentManager = this.base.components[componentDataFrom];
+        } else if (ComponentWatcher.components[componentDataFrom]) {
+          componentManager = ComponentWatcher.components[componentDataFrom];
+        }  
+      } else if (componentDataFrom instanceof ComponentManager) {
+        componentManager = componentDataFrom;
       }
-    } else if (componentDataFrom instanceof ComponentManager) {
-      componentManager = componentDataFrom;
+    } else {
+      if(this.base.components && this.base.components[componentName]) {
+        componentManager = this.base.components[componentName];
+      } else if(ComponentWatcher.components[componentName]) {
+        componentManager = ComponentWatcher.components[componentName];
+      }
     }
+
     return componentManager;
   }
   __getInstruction() {
@@ -192,7 +192,7 @@ export default class ComponentWatcher {
   }
   __getInstructionsModel() {
     const res = [];
-    this.base.modelExtract(this.instruction.value).forEach((item) => {
+    this.instruction && this.base.modelExtract(this.instruction.value).forEach((item) => {
       res.push(item.value);
     });
     return res;

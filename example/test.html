@@ -10,8 +10,7 @@
     </style>
 </head>
 <body>
-    <component 
-        data-from="'Seller'" 
+    <seller 
         data-each="i in hahas"
         key="{{hahas[i]}}"
         datas="{{ datas }}" 
@@ -20,8 +19,8 @@
         msg="{{ datas.toString() }}"
         change-seller="{{ changeSeller.bind(this) }}" 
         change-icon="{{ changeIcon }}"
-    ></component>
-    <component data-from="show" data="{{ tree }}"></component>
+    ></seller>
+    <show data="{{ tree }}"></show>
     <script src="../index.js"></script>
     <script>
         var app = Observer.watch(document.body, {
@@ -110,17 +109,17 @@
                 </ul>
                 <button onclick="{{ chgName() }}">chgname</button>
                 <component 
-                    data-from="'Button'" 
+                    data-from="'btn'" 
                     change-seller="{{ changeSeller }}" 
                     change-icon="{{ changeIcon }}"
                 ></component>
             `,
             components: {
-                Button: button
+                btn: button
             }
         });
-        Observer.registerComponent('Seller', Seller);
-        Observer.registerComponent('Show', show);
+        Observer.registerComponent('seller', Seller);
+        Observer.registerComponent('show', show);
     </script>
 </body>
 </html>

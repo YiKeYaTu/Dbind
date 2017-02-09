@@ -50,17 +50,15 @@
 
 	var _Component2 = _interopRequireDefault(_Component);
 
-	var _ComponentWatcher = __webpack_require__(3);
-
-	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
-
 	var _ObserverWatch = __webpack_require__(16);
 
 	var _ObserverWatch2 = _interopRequireDefault(_ObserverWatch);
 
-	var _ComponentManager = __webpack_require__(4);
+	var _registerComponent2 = __webpack_require__(18);
 
-	var _utilityFunc = __webpack_require__(2);
+	var _registerComponent3 = _interopRequireDefault(_registerComponent2);
+
+	var _ComponentManager = __webpack_require__(4);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -69,7 +67,7 @@
 	    return (0, _ComponentManager.createComponentManager)(componentInf);
 	  },
 	  registerComponent: function registerComponent(key, component) {
-	    _ComponentWatcher2.default.components[key] = component;
+	    return (0, _registerComponent3.default)(key, component);
 	  },
 	  watch: function watch(element, data) {
 	    return new (Function.prototype.bind.apply(_ObserverWatch2.default, [null].concat(Array.prototype.slice.call(arguments))))();
@@ -179,6 +177,7 @@
 	});
 	exports.toArray = toArray;
 	exports.delay = delay;
+	exports.clearDelay = clearDelay;
 	exports.is = is;
 	exports.deepClone = deepClone;
 	exports.randomId = randomId;
@@ -191,9 +190,12 @@
 	}
 	function delay(fn) {
 	  var t = Date.now();
-	  setTimeout(function () {
+	  return setTimeout(function () {
 	    fn(Date.now() - t);
 	  });
+	}
+	function clearDelay(delay) {
+	  clearTimeout(delay);
 	}
 	function is(target, type) {
 	  return Object.prototype.toString.call(target).toLowerCase() === '[object ' + type.toLowerCase() + ']';
@@ -272,8 +274,6 @@
 	  value: true
 	});
 
-	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
-
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 	var _Component = __webpack_require__(1);
@@ -335,9 +335,6 @@
 	    key: 'reset',
 	    value: function reset() {
 	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
-
-	      var _this = this;
-
 	      var prevData = arguments[1];
 	      var nextData = arguments[2];
 
@@ -350,47 +347,29 @@
 	      } else if (!componentManager) {
 	        this.destructor();
 	      } else {
-	        var _ret = function () {
-	          var oldProps = _this.resolvedProps;
-	          var resetWatcherList = [];
-	          _this.resolvedProps = _this.__bindProps();
-	          if (!_this.component.shouldUpdate(oldProps, _this.resolvedProps)) {
-	            return {
-	              v: void 0
-	            };
+	        var oldProps = this.resolvedProps;
+	        var resetWatcherList = [];
+	        this.resolvedProps = this.__bindProps();
+	        if (!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
+	          return;
+	        }
+	        this.component.setProps(this.resolvedProps);
+	        this.component.willUpdate(oldProps, this.resolvedProps);
+	        for (var key in oldProps) {
+	          if (oldProps[key] !== this.component.props[key]) {
+	            var _cb = (0, _modelSettlement.get)(this.modelExtractId, key);
+	            this.data[key] = this.component.props[key];
+	            _cb && resetWatcherList.push(_cb);
 	          }
-	          _this.component.setProps(_this.resolvedProps);
-	          _this.component.willUpdate(oldProps, _this.resolvedProps);
-	          for (var key in oldProps) {
-	            if (oldProps[key] !== _this.component.props[key]) {
-	              var _cb = (0, _modelSettlement.get)(_this.modelExtractId, key);
-	              _this.data[key] = _this.component.props[key];
-	              _cb && resetWatcherList.push(_cb);
-	            }
+	        }
+	        for (var _key in this.component.data) {
+	          if (this.component.data[_key] !== this.data[_key]) {
+	            var _cb2 = (0, _modelSettlement.get)(this.modelExtractId, _key);
+	            this.data[_key] = this.component.data[_key];
+	            _cb2 && resetWatcherList.push(_cb2);
 	          }
-	          for (var _key in _this.component.data) {
-	            if (_this.component.data[_key] !== _this.data[_key]) {
-	              var _cb2 = (0, _modelSettlement.get)(_this.modelExtractId, _key);
-	              _this.data[_key] = _this.component.data[_key];
-	              _cb2 && resetWatcherList.push(_cb2);
-	            }
-	          }
-	          var count = 0,
-	              len = 0;
-	          resetWatcherList.forEach(function (items) {
-	            items && items.forEach(function (item) {
-	              len++;
-	              item.reset(_this.data, function () {
-	                count++;
-	                if (count === len) {
-	                  cb();
-	                }
-	              });
-	            });
-	          });
-	        }();
-
-	        if ((typeof _ret === 'undefined' ? 'undefined' : _typeof(_ret)) === "object") return _ret.v;
+	        }
+	        this.base.runResetWatcher(resetWatcherList, this.data, cb);
 	      }
 	    }
 	  }, {
@@ -402,18 +381,18 @@
 	  }, {
 	    key: '__setChildWatcher',
 	    value: function __setChildWatcher() {
-	      var _this2 = this;
+	      var _this = this;
 
 	      var previous = null;
 	      return this.child.map(function (item, index) {
-	        return new _this2.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this2.data), previous, null, _this2.modelExtractId, _this2.component.components, _this2.base, _this2.base.getChildId(index));
+	        return new _this.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this.data), previous, null, _this.modelExtractId, _this.component.components, _this.base, _this.base.getChildId(index));
 	        previous = item;
 	      });
 	    }
 	  }, {
 	    key: '__bindProps',
 	    value: function __bindProps() {
-	      var _this3 = this;
+	      var _this2 = this;
 
 	      var props = {};
 	      this.props.normalProps.forEach(function (item) {
@@ -423,7 +402,7 @@
 	        var str = null;
 	        prop.value.forEach(function (item) {
 	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE || item.type === _statementExtract.ONCE_STATEMENT_TYPE) {
-	            var val = _this3.base.execStatement(item.value);
+	            var val = _this2.base.execStatement(item.value);
 	            if (str === null) {
 	              str = val;
 	            } else {
@@ -459,17 +438,28 @@
 	  }, {
 	    key: '__getComponentManager',
 	    value: function __getComponentManager() {
-	      var componentDataFrom = this.base.execStatement(this.instruction.value);
+	      var componentDataFrom = this.instruction && this.base.execStatement(this.instruction.value);
+	      var componentName = this.base.pastDOMInformation.nodeName.toLowerCase();
 	      var componentManager = null;
-	      if (typeof componentDataFrom === 'string') {
-	        if (ComponentWatcher.components[componentDataFrom]) {
-	          componentManager = ComponentWatcher.components[componentDataFrom];
-	        } else if (this.base.components[componentDataFrom]) {
-	          componentManager = this.base.components[componentDataFrom];
+
+	      if (componentName === ComponentWatcher.nodeName) {
+	        if (typeof componentDataFrom === 'string') {
+	          if (this.base.components && this.base.components[componentDataFrom]) {
+	            componentManager = this.base.components[componentDataFrom];
+	          } else if (ComponentWatcher.components[componentDataFrom]) {
+	            componentManager = ComponentWatcher.components[componentDataFrom];
+	          }
+	        } else if (componentDataFrom instanceof _ComponentManager.ComponentManager) {
+	          componentManager = componentDataFrom;
 	        }
-	      } else if (componentDataFrom instanceof _ComponentManager.ComponentManager) {
-	        componentManager = componentDataFrom;
+	      } else {
+	        if (this.base.components && this.base.components[componentName]) {
+	          componentManager = this.base.components[componentName];
+	        } else if (ComponentWatcher.components[componentName]) {
+	          componentManager = ComponentWatcher.components[componentName];
+	        }
 	      }
+
 	      return componentManager;
 	    }
 	  }, {
@@ -480,13 +470,13 @@
 	  }, {
 	    key: '__getProps',
 	    value: function __getProps() {
-	      var _this4 = this;
+	      var _this3 = this;
 
 	      var props = this.base.__filterAttr(ComponentWatcher.instructions, false);
 	      var obProps = [],
 	          normalProps = [];
 	      props.forEach(function (prop) {
-	        var parsed = _this4.base.statementExtract(prop.value);
+	        var parsed = _this3.base.statementExtract(prop.value);
 	        var type = null,
 	            ob = false;
 	        var obj = {};
@@ -516,7 +506,7 @@
 	    key: '__getInstructionsModel',
 	    value: function __getInstructionsModel() {
 	      var res = [];
-	      this.base.modelExtract(this.instruction.value).forEach(function (item) {
+	      this.instruction && this.base.modelExtract(this.instruction.value).forEach(function (item) {
 	        res.push(item.value);
 	      });
 	      return res;
@@ -524,13 +514,13 @@
 	  }, {
 	    key: '__getPropsModel',
 	    value: function __getPropsModel() {
-	      var _this5 = this;
+	      var _this4 = this;
 
 	      var res = [];
 	      this.props.obProps.forEach(function (prop) {
 	        prop.value.forEach(function (item) {
 	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE) {
-	            _this5.base.modelExtract(item.value).forEach(function (model) {
+	            _this4.base.modelExtract(item.value).forEach(function (model) {
 	              res.push(model.value);
 	            });
 	          }
@@ -543,7 +533,7 @@
 	  return ComponentWatcher;
 	}();
 
-	ComponentWatcher.nodeNames = ['component'];
+	ComponentWatcher.nodeName = 'component';
 	ComponentWatcher.instructions = ['data-from'];
 	ComponentWatcher.components = {};
 	exports.default = ComponentWatcher;
@@ -629,7 +619,7 @@
 
 /***/ },
 /* 5 */
-/***/ function(module, exports) {
+/***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
 
@@ -637,11 +627,16 @@
 	  value: true
 	});
 	exports.default = checkComponentName;
+
+	var _utilityFunc = __webpack_require__(2);
+
 	function checkComponentName(componentName) {
-	  var code = componentName.charCodeAt(0);
-	  if (code < 65 || code > 90) {
-	    throw new SyntaxError('component frist name is not A-Z');
+	  for (var i = 0, len = componentName.length; i < len; i++) {
+	    var code = componentName.charCodeAt(i);
+	    if (code >= 65 && code <= 90) throw new SyntaxError('Unexpected token ' + componentName + ', You should not use an uppercase component name');
 	  }
+	  var dom = document.createElement(componentName);
+	  if (!(0, _utilityFunc.is)(dom, 'HTMLUnknownElement')) throw new SyntaxError('Unexpected token ' + componentName + ', You should not use the tag name that already exists in HTML');
 	}
 
 /***/ },
@@ -789,6 +784,8 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 	var modelSettlement = {};
 
 	function set(modelExtractId, key, watcher) {
@@ -798,9 +795,9 @@
 	  }
 	  var target = modelSettlement[modelExtractId];
 	  if (target[key]) {
-	    target[key].push(watcher);
+	    target[key][watcher.obId] = watcher;
 	  } else {
-	    target[key] = [watcher];
+	    target[key] = _defineProperty({}, watcher.obId, watcher);
 	  }
 	}
 	function get(modelExtractId, key) {
@@ -810,7 +807,7 @@
 	  return modelSettlement[modelExtractId];
 	}
 	function deleteOne(modelExtractId, key) {
-	  modelSettlement[modelExtractId][key];
+	  delete modelSettlement[modelExtractId][key];
 	}
 	function deleteAll(modelExtractId) {
 	  modelSettlement[modelExtractId] = null;
@@ -852,6 +849,10 @@
 
 	var _modelExtract3 = _interopRequireDefault(_modelExtract2);
 
+	var _runResetWatcher2 = __webpack_require__(17);
+
+	var _runResetWatcher3 = _interopRequireDefault(_runResetWatcher2);
+
 	var _statementExtract2 = __webpack_require__(6);
 
 	var _statementExtract3 = _interopRequireDefault(_statementExtract2);
@@ -879,7 +880,7 @@
 	    this.parentWatcher = parentWatcher;
 	    this.obdata = obdata;
 	    this.previous = previous;
-	    this.rendering = false;
+	    this.rendering = null;
 	    this.hasDelete = false;
 	    this.modelExtractId = modelExtractId;
 	    this.pastDOMInformation = this.__getPastDOMInformation();
@@ -908,12 +909,11 @@
 
 	      var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
 
-	      if (this.rendering === true) {
-	        return;
+	      if (this.rendering !== null) {
+	        clearTimeout(this.rendering);
 	      }
 	      var prevData = (0, _utilityFunc.objectAssign)({}, this.obdata);
 	      var nextData = (0, _utilityFunc.objectAssign)({}, this.obdata);
-	      this.rendering = true;
 	      if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) !== 'object') {
 	        throw new TypeError('data is not a object');
 	      } else {
@@ -922,11 +922,11 @@
 	        }
 	      }
 	      this.obdata = nextData;
-	      (0, _utilityFunc.delay)(function (time) {
+	      this.rendering = (0, _utilityFunc.delay)(function (time) {
 	        if (!_this.hasDelete) {
 	          _this.obwatcher.reset(cb, prevData, nextData);
-	          _this.rendering = false;
 	        }
+	        _this.rendering = null;
 	        cb();
 	      });
 	    }
@@ -941,19 +941,12 @@
 	          resetWatcherList.push((0, _modelSettlement.get)(this.modelExtractId, key));
 	        }
 	      }
-	      var count = 0,
-	          len = 0;
-	      resetWatcherList.forEach(function (items) {
-	        items && items.forEach(function (item) {
-	          len++;
-	          item.reset(data, function () {
-	            count++;
-	            if (count === len) {
-	              cb();
-	            }
-	          });
-	        });
-	      });
+	      this.runResetWatcher(resetWatcherList, data, cb);
+	    }
+	  }, {
+	    key: 'runResetWatcher',
+	    value: function runResetWatcher(resetWatcherList, data, cb) {
+	      (0, _runResetWatcher3.default)(resetWatcherList, data, cb);
 	    }
 	  }, {
 	    key: '__getWatcher',
@@ -996,9 +989,7 @@
 	        }
 	        if (isManagerWatcher) {
 	          return BaseWatcher.ManagerWatcher;
-	        } else if (_ComponentWatcher2.default.nodeNames.indexOf(NODE_NAME) > -1 || this.components && this.components[NODE_NAME]) {
-	          return BaseWatcher.ComponentWatcher;
-	        } else if (_ComponentWatcher2.default.components[NODE_NAME]) {
+	        } else if (_ComponentWatcher2.default.nodeName === NODE_NAME || _ComponentWatcher2.default.components[NODE_NAME] || this.components && this.components[NODE_NAME]) {
 	          return BaseWatcher.ComponentWatcher;
 	        } else {
 	          return BaseWatcher.ElementWatcher;
@@ -2070,6 +2061,58 @@
 	}();
 
 	exports.default = Watch;
+
+/***/ },
+/* 17 */
+/***/ function(module, exports) {
+
+	"use strict";
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	exports.default = function (resetWatcherList, data, cb) {
+	  var count = 0,
+	      len = 0;
+	  resetWatcherList.forEach(function (watcherPool) {
+	    if (watcherPool) {
+	      for (var id in watcherPool) {
+	        len++;
+	        watcherPool[id].reset(data, function () {
+	          count++;
+	          count === len && cb();
+	        });
+	      }
+	    }
+	  });
+	};
+
+/***/ },
+/* 18 */
+/***/ function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = registerComponent;
+
+	var _ComponentWatcher = __webpack_require__(3);
+
+	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
+
+	var _checkComponentName = __webpack_require__(5);
+
+	var _checkComponentName2 = _interopRequireDefault(_checkComponentName);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function registerComponent(key, componentWatcher) {
+	  (0, _checkComponentName2.default)(key);
+	  _ComponentWatcher2.default.components[key] = componentWatcher;
+	}
 
 /***/ }
 /******/ ]);
