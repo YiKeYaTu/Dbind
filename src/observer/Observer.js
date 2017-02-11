@@ -15,8 +15,4 @@ const Observer = {
   }
 }
 
-if(typeof moudle !== 'undefined' && module.exports) {
-  module.exports = Observer;
-} else {
-  window.Observer = Observer;
-}
+export default Observer;

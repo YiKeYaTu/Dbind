@@ -46,6 +46,10 @@
 
 	'use strict';
 
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
 	var _Component = __webpack_require__(1);
 
 	var _Component2 = _interopRequireDefault(_Component);
@@ -74,11 +78,7 @@
 	  }
 	};
 
-	if (typeof moudle !== 'undefined' && module.exports) {
-	  module.exports = Observer;
-	} else {
-	  window.Observer = Observer;
-	}
+	exports.default = Observer;
 
 /***/ },
 /* 1 */
