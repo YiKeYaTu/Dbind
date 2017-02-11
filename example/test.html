@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-cn">
 <head>
     <meta charset="UTF-8">
     <title>Document</title>
@@ -10,6 +10,7 @@
     </style>
 </head>
 <body>
+    {{{ names }}}
     <lazy-box load-path="./faa" loading-component="{{ loading }}" children="2121"></lazy-box>
     <seller 
         data-each="i in hahas"
@@ -23,51 +24,12 @@
     ></seller>
     <show data="{{ tree }}"></show>
     <button onclick="{{ changeTree() }}">chgTree</button>
-    <script src="../index.js"></script>
+    <script src="../dist/index.js"></script>
     <script>
-        var app = Observer.watch(document.body, {
-            datas: ['100', '200', '300'],
-            hahas: ['gege', 'lc', '2121221'],
-            icon: '$$',
-            tree: {
-                name: 'lc', 
-                children: {
-                    name: 'zy', 
-                    children: {
-                        name: 'sa',
-                        children: {
-                            name: 'hashsasa',
-                            children: null
-                        }
-                    }
-                } 
-            },
-            changeTree() {
-                var tree = app.data.tree;
-                tree.children.children = {name: 'what'};
-                while(tree.children) {
-                    tree.children = Object.assign({}, tree.children);
-                    tree = tree.children;
-                }
-                app.watcher.trackingUpdate({
-                    tree:  Object.assign({}, app.data.tree)
-                });
-            },
-            changeSeller: function() {       
-                app.watcher.trackingUpdate({
-                    datas: [1, 3, 4, 5, 6, 6,7]
-                });
-            },
-            changeIcon: function() {
-                app.watcher.trackingUpdate({
-                    datas: [5, 0]
-                });
-            }
-        });
-        var loading = Observer.createClass({
+        var loading = Dbind.createClass({
             template: 'im loading'
         });
-        var LazyBox = Observer.createClass({
+        var LazyBox = Dbind.createClass({
             keepProps: [
                 'loadingComponent',
                 'loadPath'
@@ -75,7 +37,7 @@
             didMount() {
                 setTimeout(() => {
                     this.trackingUpdate({
-                        component: Observer.createClass({
+                        component: Dbind.createClass({
                             template: 'load success'
                         })
                     });
@@ -106,7 +68,7 @@
                 return `<component data-from="component" ${propsStr}></component>`;
             }
         });
-        var show = Observer.createClass({
+        var show = Dbind.createClass({
             template: `
                 <div data-if="data">
                     <p>{{ data.name }}</p>
@@ -114,7 +76,7 @@
                 </div>
             `
         });
-        var button = Observer.createClass({
+        var button = Dbind.createClass({
             data: {
                 world: '<p>hh</p>',
             },
@@ -126,11 +88,11 @@
                 <button onclick="{{ changeIcon() }}">change Icon</button>
             `
         });
-        var Seller = Observer.createClass({
+        var Seller = Dbind.createClass({
             data: {
                 name: 'lc',
                 left: '10px',
-                dataComponent: Observer.createClass({
+                dataComponent: Dbind.createClass({
                     didMount() {
                     },
                     template: `<h1>{{name}}</h1>`
@@ -189,10 +151,50 @@
                 btn: button
             }
         });
-        Observer.registerComponent('seller', Seller);
-        Observer.registerComponent('show', show);
-        Observer.registerComponent('lazy-box', LazyBox);
-        Observer.registerComponent('loading', loading);
+        Dbind.registerComponent('seller', Seller);
+        Dbind.registerComponent('show', show);
+        Dbind.registerComponent('lazy-box', LazyBox);
+        Dbind.registerComponent('loading', loading);
+        var app = Dbind.watch(document.body, {
+            datas: ['100', '200', '300'],
+            hahas: ['gege', 'lc', '2121221'],
+            names: 'zyayasyfasf',
+            icon: '$$',
+            tree: {
+                name: 'lc', 
+                children: {
+                    name: 'zy', 
+                    children: {
+                        name: 'sa',
+                        children: {
+                            name: 'hashsasa',
+                            children: null
+                        }
+                    }
+                } 
+            },
+            changeTree() {
+                var tree = app.data.tree;
+                tree.children.children = {name: 'what'};
+                while(tree.children) {
+                    tree.children = Object.assign({}, tree.children);
+                    tree = tree.children;
+                }
+                app.watcher.trackingUpdate({
+                    tree:  Object.assign({}, app.data.tree)
+                });
+            },
+            changeSeller: function() {       
+                app.watcher.trackingUpdate({
+                    datas: [1, 3, 4, 5, 6, 6,7]
+                });
+            },
+            changeIcon: function() {
+                app.watcher.trackingUpdate({
+                    datas: [5, 0]
+                });
+            }
+        });
     </script>
 </body>
 </html>

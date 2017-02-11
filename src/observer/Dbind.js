@@ -1,9 +1,9 @@
 import Component from '../component/Component';
-import ObserverWatch from './ObserverWatch';
+import watch from './watch';
 import registerComponent from '../component/registerComponent';
 import { createComponentManager } from '../component/ComponentManager';
 
-const Observer = {
+export default {
   createClass(componentInf) {
     return createComponentManager(componentInf);
   },
@@ -11,8 +11,6 @@ const Observer = {
     return registerComponent(key, component);
   },
   watch(element, data) {
-    return new ObserverWatch(...arguments);
+    return new watch(...arguments);
   }
 }
-
-export default Observer;

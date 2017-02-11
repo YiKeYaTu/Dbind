@@ -76,7 +76,11 @@ export default function statementExtract(str) {
       if((norEnd > -1 && stmStack[stmLen - 1] === NOR_STATEMENT_TYPE) || (onceEnd > -1 && stmStack[stmLen - 1] === ONCE_STATEMENT_TYPE)) {
         stmStack.pop();
         if(stmLen === 1) {
-          i += norEnd > -1 ? norEnd : onceEnd;
+          if(onceEnd > -1) {
+            i += onceEnd;
+          } else if(norEnd > -1) {
+            i += norEnd ;
+          } 
           p ++;
         } else {
           res[p].value += str.slice(i, i += (norEnd > -1 ? norEnd : onceEnd));

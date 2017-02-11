@@ -1,7 +1,7 @@
 module.exports = {
-  entry: './src/observer/Observer.js',
+  entry: './dist.js',
   output: {
-    path: './',
+    path: './dist',
     filename: 'index.js'
   },
   module: {
