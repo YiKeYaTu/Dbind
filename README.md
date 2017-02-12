@@ -18,7 +18,7 @@
     var app = Observer.watch(document.getElementsByTagName('div')[0], {
         msg: 'hello world',
         reverseMsg: function() {
-            app.trackingUpdate(() => {}, 'msg', this.msg.split('').reverse().join(''));
+            app.watcher.trackingUpdate(() => {}, 'msg', this.msg.split('').reverse().join(''));
         }
     });
 
