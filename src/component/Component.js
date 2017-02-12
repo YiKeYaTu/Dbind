@@ -11,14 +11,15 @@ export default class Component {
     this.template = null;
     this.props = null;
     this.data = null;
+    this.propTypes = null;
   }
   init(watcher, props) {
     this.watcher = watcher;
     this.props = props;
-    this.__setRefs();
   }
   setDOMElement(element) {
     this.element = element;
+    this.__setRefs();
   }
   trackingUpdate(data, cb = () => { }) {
     const prevData = objectAssign({}, this.data);

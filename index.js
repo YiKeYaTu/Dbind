@@ -1,3 +1,1 @@
-var Dbind = require('./src/observer/Dbind');
-
-module.exports = Dbind;
+module.exports = require('./lib/observer/Dbind');

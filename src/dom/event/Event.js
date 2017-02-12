@@ -70,6 +70,12 @@ export const events = [
   'onwaiting'
 ];
 
+export const noBubblesEvents = [
+  'abort',
+  'blur',
+  
+];
+
 let eventPool = {};
 
 for(let i = 0, len = events.length; i < len; i ++) {

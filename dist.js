@@ -1,3 +1,1 @@
-import Dbind from './src/observer/Dbind';
-
-global.Dbind = Dbind
+global.Dbind = require('./src/observer/Dbind').default;
