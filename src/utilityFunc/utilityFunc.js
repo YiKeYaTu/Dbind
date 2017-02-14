@@ -61,7 +61,7 @@ export function walkElement(dom, cb) {
   }
 }
 export function toHump(str) {
-  return str.replace(/-(.)/, (a, b) => {
+  return str.replace(/-(.)/g, (a, b) => {
     return String.fromCharCode(b.charCodeAt(0) - 32);
   });
 }

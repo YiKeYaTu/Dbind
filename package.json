@@ -1,6 +1,6 @@
 {
   "name": "dbind",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "前端组件化mvvm框架",
   "main": "index.js",
   "directories": {
