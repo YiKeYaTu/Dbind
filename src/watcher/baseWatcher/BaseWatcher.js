@@ -11,7 +11,7 @@ import statementExtract from '../../parser/statementExtract';
 
 import { set, get } from '../../model/modelSettlement';
 
-import { delay } from '../../utilityFunc/utilityFunc';
+import { delay, getTagText } from '../../utilityFunc/utilityFunc';
 
 export default class BaseWatcher {
   static ManagerWatcher = 1;
@@ -177,6 +177,20 @@ export default class BaseWatcher {
     return statementExtract(str);
   }
   execStatement(statement) {
-    return (new Function('data', `with(data) { return ${statement};}`))(this.obdata);
+    try {
+      return (new Function('data', `with(data) { return ${statement};}`))(this.obdata);
+    } catch(e) {
+      let errText = '';
+      switch(this.obtype) {
+        case BaseWatcher.TextWatcher:
+          errText = this.element.textContent;
+          break;
+        case BaseWatcher.ManagerWatcher:
+        case BaseWatcher.ElementWatcher:
+        case BaseWatcher.ComponentWatcher:
+          errText = getTagText(this.element);
+      }
+      throw e + '\n\n' + errText;
+    }
   }
 }

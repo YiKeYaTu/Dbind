@@ -1,5 +1,4 @@
 import { walkElement, objectAssign } from '../utilityFunc/utilityFunc';
-import htmlParser from '../parser/htmlParser';
 
 export const ComponentLifecycle = ['didMount', 'willMount', 'willUpdate', 'shouldUpdate'];
 
@@ -17,7 +16,6 @@ export default class Component {
   init(watcher, props) {
     this.watcher = watcher;
     this.props = props;
-    this.template = this.__handleTemplate();
   }
   setDOMElement(element) {
     this.element = element;
@@ -40,9 +38,6 @@ export default class Component {
       ref && (refs[ref] = element);
     });
     this.refs = refs;
-  }
-  __handleTemplate() {
-    return htmlParser(this.template);
   }
   didMount() { }
   willMount() { }

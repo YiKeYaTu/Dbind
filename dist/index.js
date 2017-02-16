@@ -67,7 +67,7 @@
 
 	var _watch3 = _interopRequireDefault(_watch2);
 
-	var _registerComponent2 = __webpack_require__(19);
+	var _registerComponent2 = __webpack_require__(20);
 
 	var _registerComponent3 = _interopRequireDefault(_registerComponent2);
 
@@ -102,12 +102,6 @@
 
 	var _utilityFunc = __webpack_require__(3);
 
-	var _htmlParser = __webpack_require__(20);
-
-	var _htmlParser2 = _interopRequireDefault(_htmlParser);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var ComponentLifecycle = exports.ComponentLifecycle = ['didMount', 'willMount', 'willUpdate', 'shouldUpdate'];
@@ -130,7 +124,6 @@
 	    value: function init(watcher, props) {
 	      this.watcher = watcher;
 	      this.props = props;
-	      this.template = this.__handleTemplate();
 	    }
 	  }, {
 	    key: 'setDOMElement',
@@ -163,11 +156,6 @@
 	        ref && (refs[ref] = element);
 	      });
 	      this.refs = refs;
-	    }
-	  }, {
-	    key: '__handleTemplate',
-	    value: function __handleTemplate() {
-	      return (0, _htmlParser2.default)(this.template);
 	    }
 	  }, {
 	    key: 'didMount',
@@ -209,6 +197,7 @@
 	exports.walkElement = walkElement;
 	exports.toHump = toHump;
 	exports.toHumpBack = toHumpBack;
+	exports.getTagText = getTagText;
 	function toArray(arrayLike) {
 	  return [].slice.call(arrayLike);
 	}
@@ -287,6 +276,13 @@
 	  });
 	  return strArr.join('');
 	}
+	function getTagText(tag) {
+	  var tagName = tag.nodeName.toLowerCase();
+	  var attrStr = toArray(tag.attributes).map(function (item) {
+	    return item.name + '="' + item.value + '"';
+	  }).join('\n  ');
+	  return '<' + tagName + ' ' + attrStr + '>';
+	}
 
 /***/ },
 /* 4 */
@@ -362,15 +358,15 @@
 
 	var _ComponentWatcher2 = _interopRequireDefault(_ComponentWatcher);
 
-	var _TextWatcher = __webpack_require__(15);
+	var _TextWatcher = __webpack_require__(16);
 
 	var _TextWatcher2 = _interopRequireDefault(_TextWatcher);
 
-	var _modelExtract2 = __webpack_require__(17);
+	var _modelExtract2 = __webpack_require__(18);
 
 	var _modelExtract3 = _interopRequireDefault(_modelExtract2);
 
-	var _runResetWatcher2 = __webpack_require__(18);
+	var _runResetWatcher2 = __webpack_require__(19);
 
 	var _runResetWatcher3 = _interopRequireDefault(_runResetWatcher2);
 
@@ -602,7 +598,21 @@
 	  }, {
 	    key: 'execStatement',
 	    value: function execStatement(statement) {
-	      return new Function('data', 'with(data) { return ' + statement + ';}')(this.obdata);
+	      try {
+	        return new Function('data', 'with(data) { return ' + statement + ';}')(this.obdata);
+	      } catch (e) {
+	        var errText = '';
+	        switch (this.obtype) {
+	          case BaseWatcher.TextWatcher:
+	            errText = this.element.textContent;
+	            break;
+	          case BaseWatcher.ManagerWatcher:
+	          case BaseWatcher.ElementWatcher:
+	          case BaseWatcher.ComponentWatcher:
+	            errText = (0, _utilityFunc.getTagText)(this.element);
+	        }
+	        throw e + '\n\n' + errText;
+	      }
 	    }
 	  }]);
 
@@ -657,6 +667,13 @@
 	  }
 
 	  _createClass(ManagerWatcher, [{
+	    key: 'destructor',
+	    value: function destructor() {
+	      this.childWacther.forEach(function (item) {
+	        return item.destructor();
+	      });
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var childIndex = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
@@ -712,7 +729,7 @@
 	    value: function __setChildWatcher(childIndex) {
 	      var _this = this;
 
-	      var vector = new Function('data', 'with(data) { return ' + this.vector + ' }')(this.base.obdata).slice(childIndex);
+	      var vector = this.base.execStatement(this.vector).slice(childIndex);
 	      var child = [];
 	      (0, _traversalVector2.default)(vector, function (key, count) {
 	        if ((0, _utilityFunc.is)(vector, 'array')) {
@@ -1482,7 +1499,15 @@
 
 	var _ComponentManager = __webpack_require__(13);
 
+	var _Dbind = __webpack_require__(1);
+
+	var _Dbind2 = _interopRequireDefault(_Dbind);
+
 	var _utilityFunc = __webpack_require__(3);
+
+	var _htmlParser = __webpack_require__(15);
+
+	var _htmlParser2 = _interopRequireDefault(_htmlParser);
 
 	var _statementExtract = __webpack_require__(11);
 
@@ -1585,8 +1610,18 @@
 	      var _this = this;
 
 	      var previous = null;
+	      var modelExtractId = this.modelExtractId;
+	      var components = this.component.components;
+	      var data = this.data;
+	      if (this.componentManager) {
+	        if (this.componentManager.childModelExtractId) {
+	          modelExtractId = this.componentManager.childModelExtractId;
+	          data = this.componentManager.childObData;
+	          components = this.componentManager.childComponents;
+	        }
+	      }
 	      return this.child.map(function (item, index) {
-	        return new _this.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, _this.data), previous, null, _this.modelExtractId, _this.component.components, _this.base, _this.base.getChildId(index));
+	        return new _this.BaseWatcher(item, (0, _utilityFunc.objectAssign)({}, data), previous, null, modelExtractId, components, _this.base, _this.base.getChildId(index));
 	        previous = item;
 	      });
 	    }
@@ -1619,7 +1654,27 @@
 	        });
 	        props[prop.name] = str;
 	      });
+	      this.__bindChildrenProps(props);
 	      return props;
+	    }
+	  }, {
+	    key: '__bindChildrenProps',
+	    value: function __bindChildrenProps(props) {
+	      var children = this.base.element.innerHTML;
+	      if (children.replace(/\s/g, '')) {
+	        this.base.element.innerHTML = '';
+	        var childrenComponent = _Dbind2.default.createClass({
+	          data: this.base.obdata,
+	          template: children
+	        });
+	        childrenComponent.childObData = this.base.obdata;
+	        childrenComponent.childModelExtractId = this.base.modelExtractId;
+	        childrenComponent.childComponents = this.base.components;
+	        if (props.children) {
+	          throw new TypeError('You should not use children props');
+	        }
+	        props.children = childrenComponent;
+	      }
 	    }
 	  }, {
 	    key: '__renderComponent',
@@ -1629,9 +1684,9 @@
 	      var template = document.createElement('div');
 	      var parent = this.base.pastDOMInformation.parentNode;
 	      if (typeof this.component.template === 'string') {
-	        template.innerHTML = this.component.template;
+	        template.innerHTML = (0, _htmlParser2.default)(this.component.template);
 	      } else if (typeof this.component.template === 'function') {
-	        template.innerHTML = this.component.template();
+	        template.innerHTML = (0, _htmlParser2.default)(this.component.template());
 	      }
 	      var child = (0, _utilityFunc.toArray)(template.childNodes);
 	      while (template.childNodes[0]) {
@@ -1854,6 +1909,70 @@
 
 /***/ },
 /* 15 */
+/***/ function(module, exports) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
+	exports.default = function (str) {
+	  var resStr = '';
+
+	  for (var i = 0, len = str.length; i < len; i++) {
+	    var char = str[i];
+	    var nextChar = str[i + 1];
+
+	    if (char === TAG_START) {
+	      var start = i;
+	      var tagName = '';
+	      var col = null;
+	      var repeat = false;
+	      var tagStr = '';
+
+	      for (; i < len; i++) {
+	        var _char = str[i];
+	        if (!col && ATTR_NAME_REPLACE.test(_char)) {
+	          tagStr += ATTR_NAME_REPLACE_AFTER + _char.toLowerCase();
+	        } else {
+	          tagStr += _char;
+	          if (SYB_REG.test(_char)) {
+	            if (!col) {
+	              col = _char;
+	            } else {
+	              if (col === _char) {
+	                col = null;
+	              }
+	            }
+	          }
+	        }
+	        if (!col && _char === TAG_END) {
+	          if (str[i - 1] === TAG_CLOSE) {
+	            repeat = true;
+	          }
+	          break;
+	        }
+	      }
+	      resStr += tagStr;
+	      continue;
+	    }
+	    resStr += char;
+	  }
+	  return resStr;
+	};
+
+	var TAG_START = '<';
+	var TAG_END = '>';
+	var TAG_CLOSE = '/';
+
+	var SYB_REG = /['"]/;
+
+	var ATTR_NAME_REPLACE = /[A-Z]/;
+	var ATTR_NAME_REPLACE_AFTER = '-';
+
+/***/ },
+/* 16 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1864,7 +1983,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _statementToString = __webpack_require__(16);
+	var _statementToString = __webpack_require__(17);
 
 	var _statementToString2 = _interopRequireDefault(_statementToString);
 
@@ -1981,7 +2100,7 @@
 	exports.default = TextWatcher;
 
 /***/ },
-/* 16 */
+/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2010,7 +2129,7 @@
 	}
 
 /***/ },
-/* 17 */
+/* 18 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -2102,7 +2221,7 @@
 	exports.default = modelExtract;
 
 /***/ },
-/* 18 */
+/* 19 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -2128,7 +2247,7 @@
 	};
 
 /***/ },
-/* 19 */
+/* 20 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -2152,64 +2271,6 @@
 	  (0, _checkComponentName2.default)(key);
 	  _ComponentWatcher2.default.components[key] = componentWatcher;
 	}
-
-/***/ },
-/* 20 */
-/***/ function(module, exports) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	exports.default = function (str) {
-	  var resStr = '';
-
-	  for (var i = 0, len = str.length; i < len; i++) {
-	    var char = str[i];
-	    var nextChar = str[i + 1];
-
-	    if (char === TAG_START) {
-	      var start = i;
-	      var tagName = '';
-	      var sybFlg = false;
-	      var repeat = false;
-	      var tagStr = '';
-
-	      for (; i < len; i++) {
-	        var _char = str[i];
-	        if (!sybFlg && ATTR_NAME_REPLACE.test(_char)) {
-	          tagStr += ATTR_NAME_REPLACE_AFTER + _char.toLowerCase();
-	        } else {
-	          tagStr += _char;
-	          if (SYB_REG.test(_char)) {
-	            sybFlg = !sybFlg;
-	          }
-	        }
-	        if (!sybFlg && _char === TAG_END) {
-	          if (str[i - 1] === TAG_CLOSE) {
-	            repeat = true;
-	          }
-	          break;
-	        }
-	      }
-	      resStr += tagStr;
-	      continue;
-	    }
-	    resStr += char;
-	  }
-	  return resStr;
-	};
-
-	var TAG_START = '<';
-	var TAG_END = '>';
-	var TAG_CLOSE = '/';
-
-	var SYB_REG = /['"]/;
-
-	var ATTR_NAME_REPLACE = /[A-Z]/;
-	var ATTR_NAME_REPLACE_AFTER = '-';
 
 /***/ }
 /******/ ]);

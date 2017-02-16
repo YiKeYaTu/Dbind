@@ -17,21 +17,27 @@ export default function (str) {
     if (char === TAG_START) {
       let start = i;
       let tagName = '';
-      let sybFlg = false;
+      let col = null;
       let repeat = false;
       let tagStr = '';
 
       for(; i < len; i ++) {
         let char = str[i];
-        if(!sybFlg && ATTR_NAME_REPLACE.test(char)) {
+        if(!col && ATTR_NAME_REPLACE.test(char)) {
           tagStr += ATTR_NAME_REPLACE_AFTER + char.toLowerCase();
         } else {
           tagStr += char; 
           if(SYB_REG.test(char)) {
-            sybFlg = !sybFlg;
+            if(!col) {
+              col = char;
+            } else {
+              if(col === char) {
+                col = null;
+              }
+            }
           }
         }
-        if(!sybFlg && char === TAG_END) {
+        if(!col && char === TAG_END) {
           if(str[i -1] === TAG_CLOSE) {
             repeat = true;
           }

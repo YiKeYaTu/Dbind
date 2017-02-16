@@ -1,8 +1,10 @@
 import Component from '../../component/Component';
 import { ComponentManager } from '../../component/ComponentManager';
+import Dbind from '../../observer/Dbind';
 
 import { toArray, objectAssign, randomId, deepClone, toHump } from '../../utilityFunc/utilityFunc';
 
+import htmlParser from '../../parser/htmlParser';
 import { NOR_STATEMENT_TYPE, ONCE_STATEMENT_TYPE, CONST_STRING } from '../../parser/statementExtract';
 import { all, get, deleteAll } from '../../model/modelSettlement';
 
@@ -81,14 +83,24 @@ export default class ComponentWatcher {
   }
   __setChildWatcher() {
     let previous = null;
+    let modelExtractId = this.modelExtractId;
+    let components = this.component.components;
+    let data = this.data;
+    if(this.componentManager) {
+      if(this.componentManager.childModelExtractId) {
+        modelExtractId = this.componentManager.childModelExtractId;
+        data = this.componentManager.childObData;
+        components = this.componentManager.childComponents;
+      }
+    }
     return this.child.map((item, index) => {
       return new this.BaseWatcher(
         item,
-        objectAssign({}, this.data),
+        objectAssign({}, data),
         previous,
         null,
-        this.modelExtractId,
-        this.component.components,
+        modelExtractId,
+        components,
         this.base,
         this.base.getChildId(index)
       );
@@ -120,7 +132,25 @@ export default class ComponentWatcher {
       });
       props[prop.name] = str;
     });
+    this.__bindChildrenProps(props);
     return props;
+  }
+  __bindChildrenProps(props) {
+    let children = this.base.element.innerHTML;
+    if(children.replace(/\s/g, '')) {
+      this.base.element.innerHTML = '';
+      let childrenComponent = Dbind.createClass({
+        data: this.base.obdata,
+        template: children
+      });
+      childrenComponent.childObData = this.base.obdata;
+      childrenComponent.childModelExtractId = this.base.modelExtractId;
+      childrenComponent.childComponents = this.base.components;
+      if(props.children) {
+        throw new TypeError('You should not use children props');
+      }
+      props.children = childrenComponent;
+    }
   }
   __renderComponent() {
     if (!this.component) return;
@@ -128,9 +158,9 @@ export default class ComponentWatcher {
     const template = document.createElement('div');
     const parent = this.base.pastDOMInformation.parentNode;
     if(typeof this.component.template === 'string') {
-      template.innerHTML = this.component.template;
+      template.innerHTML = htmlParser(this.component.template);
     } else if(typeof this.component.template === 'function') {
-      template.innerHTML = this.component.template();
+      template.innerHTML = htmlParser(this.component.template());
     }
     const child = toArray(template.childNodes);
     while (template.childNodes[0]) {

@@ -17,6 +17,9 @@ export default class ManagerWatcher {
     this.__check();
     this.__removeRootElement();
   }
+  destructor() {
+    this.childWacther.forEach(item => item.destructor());
+  }
   render(childIndex = 0) {
     this.__setChildWatcher(childIndex);
     this.__appendChildWatcherToDOM(childIndex);
@@ -55,7 +58,7 @@ export default class ManagerWatcher {
     }
   }
   __setChildWatcher(childIndex) {
-    const vector = (new Function('data', `with(data) { return ${this.vector} }`)(this.base.obdata)).slice(childIndex);
+    const vector = this.base.execStatement(this.vector).slice(childIndex);
     const child = [];
     traversalVector(vector, (key, count) => {
       if(is(vector, 'array')) {

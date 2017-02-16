@@ -77,3 +77,10 @@ export function toHumpBack(str) {
   });
   return strArr.join('');
 }
+export function getTagText(tag) {
+  let tagName = tag.nodeName.toLowerCase();
+  let attrStr = toArray(tag.attributes).map((item) => {
+    return item.name + '="' + item.value + '"';
+  }).join('\n  ');
+  return `<${tagName} ${attrStr}>`
+}
