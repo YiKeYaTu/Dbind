@@ -36,6 +36,7 @@ export default class ComponentWatcher {
     this.component.init(this.base, this.resolvedProps);
     this.child = this.__renderComponent();
     this.component.setDOMElement(this.child);
+    this.__execComponentCbFuncs();
     this.component.willMount();
     this.data = objectAssign({}, this.component.props, this.component.data);
     this.childWatcher = this.__setChildWatcher();
@@ -59,6 +60,7 @@ export default class ComponentWatcher {
         return;
       }
       this.component.setProps(this.resolvedProps);
+      this.__execComponentCbFuncs();
       this.component.willUpdate(oldProps, this.resolvedProps);
       for (let key in oldProps) {
         if (oldProps[key] !== this.component.props[key]) {
@@ -250,5 +252,15 @@ export default class ComponentWatcher {
       });
     });
     return res;
+  }
+  __execComponentCbFuncs() {
+    if(this.componentManager) {
+      const cbs =  this.componentManager.cbFuncs;
+      cbs.forEach((item) => {
+        if(typeof this.component[item.funcName] === 'function') {
+          this.component[item.funcName].apply(this, item.query || []);
+        }
+      }); 
+    }
   }
 }

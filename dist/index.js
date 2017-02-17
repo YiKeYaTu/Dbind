@@ -1551,6 +1551,7 @@
 	      this.component.init(this.base, this.resolvedProps);
 	      this.child = this.__renderComponent();
 	      this.component.setDOMElement(this.child);
+	      this.__execComponentCbFuncs();
 	      this.component.willMount();
 	      this.data = (0, _utilityFunc.objectAssign)({}, this.component.props, this.component.data);
 	      this.childWatcher = this.__setChildWatcher();
@@ -1580,6 +1581,7 @@
 	          return;
 	        }
 	        this.component.setProps(this.resolvedProps);
+	        this.__execComponentCbFuncs();
 	        this.component.willUpdate(oldProps, this.resolvedProps);
 	        for (var key in oldProps) {
 	          if (oldProps[key] !== this.component.props[key]) {
@@ -1794,6 +1796,20 @@
 	      });
 	      return res;
 	    }
+	  }, {
+	    key: '__execComponentCbFuncs',
+	    value: function __execComponentCbFuncs() {
+	      var _this5 = this;
+
+	      if (this.componentManager) {
+	        var cbs = this.componentManager.cbFuncs;
+	        cbs.forEach(function (item) {
+	          if (typeof _this5.component[item.funcName] === 'function') {
+	            _this5.component[item.funcName].apply(_this5, item.query || []);
+	          }
+	        });
+	      }
+	    }
 	  }]);
 
 	  return ComponentWatcher;
@@ -1840,6 +1856,9 @@
 	    this.id = id;
 	    this.componentInf = componentInf;
 	    this.trackingUpdate = null;
+	    this.childObData = null;
+	    this.childModelExtactId = null;
+	    this.cbFuncs = [];
 	  }
 
 	  _createClass(ComponentManager, [{

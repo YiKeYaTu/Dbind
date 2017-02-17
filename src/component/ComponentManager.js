@@ -8,6 +8,9 @@ export class ComponentManager {
     this.id = id;
     this.componentInf = componentInf;
     this.trackingUpdate = null;
+    this.childObData = null;
+    this.childModelExtactId = null;
+    this.cbFuncs = [];
   }
   createComponent() {
     let component = new Component();
