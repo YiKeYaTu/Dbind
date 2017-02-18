@@ -13,16 +13,16 @@ export function clearDelay(delay) {
 export function is(target, type) {
   return Object.prototype.toString.call(target).toLowerCase() === `[object ${type.toLowerCase()}]`;
 }
-export function deepClone(t) {
+export function deepClone(t, escap) {
   if (is(t, 'array')) {
     return t.map((item) => {
-      return deepClone(item);
+      return deepClone(item, escap);
     });
   } else if (is(t, 'object')) {
     const nt = {};
     for (let key in t) {
-      if(t.hasOwnProperty(key))
-        nt[key] = deepClone(t[key]);
+      if(t.hasOwnProperty(key)) 
+        nt[key] = deepClone(t[key], escap);
     }
     nt.__proto__ = t.__proto__;
     return nt;

@@ -213,15 +213,15 @@
 	function is(target, type) {
 	  return Object.prototype.toString.call(target).toLowerCase() === '[object ' + type.toLowerCase() + ']';
 	}
-	function deepClone(t) {
+	function deepClone(t, escap) {
 	  if (is(t, 'array')) {
 	    return t.map(function (item) {
-	      return deepClone(item);
+	      return deepClone(item, escap);
 	    });
 	  } else if (is(t, 'object')) {
 	    var nt = {};
 	    for (var key in t) {
-	      if (t.hasOwnProperty(key)) nt[key] = deepClone(t[key]);
+	      if (t.hasOwnProperty(key)) nt[key] = deepClone(t[key], escap);
 	    }
 	    nt.__proto__ = t.__proto__;
 	    return nt;
@@ -1805,9 +1805,12 @@
 	        var cbs = this.componentManager.cbFuncs;
 	        cbs.forEach(function (item) {
 	          if (typeof _this5.component[item.funcName] === 'function') {
-	            _this5.component[item.funcName].apply(_this5, item.query || []);
+	            setTimeout(function () {
+	              _this5.component[item.funcName].apply(_this5.component, item.query || []);
+	            });
 	          }
 	        });
+	        this.componentManager.cbFuncs = [];
 	      }
 	    }
 	  }]);
@@ -1865,10 +1868,21 @@
 	    key: 'createComponent',
 	    value: function createComponent() {
 	      var component = new _Component2.default();
+	      var data = this.componentInf.data;
+	      var components = this.componentInf.components;
+
+	      delete this.componentInf.data;
+	      delete this.componentInf.components;
+
 	      component = (0, _utilityFunc.objectAssign)(component, (0, _utilityFunc.deepClone)(this.componentInf));
-	      component.components = this.componentInf.components;
-	      var scope = createScope(component);
-	      bindComponentFunc(component.data, scope);
+
+	      this.componentInf.data = data;
+	      this.componentInf.components = components;
+
+	      component.data = typeof data === 'function' && data() || data;
+	      component.components = components;
+
+	      bindComponentFunc(component.data, component);
 	      checkComponentsName(component.components);
 	      return component;
 	    }
@@ -1876,13 +1890,6 @@
 
 	  return ComponentManager;
 	}();
-
-	function createScope(component) {
-	  return {
-	    data: component.data,
-	    trackingUpdate: component.trackingUpdate.bind(component)
-	  };
-	}
 
 	function bindComponentFunc(data, scope) {
 	  for (var key in data) {

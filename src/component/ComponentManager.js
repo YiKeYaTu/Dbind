@@ -14,19 +14,23 @@ export class ComponentManager {
   }
   createComponent() {
     let component = new Component();
+    const data = this.componentInf.data;
+    const components = this.componentInf.components;
+
+    delete this.componentInf.data;
+    delete this.componentInf.components;
+
     component = objectAssign(component, deepClone(this.componentInf));
-    component.components = this.componentInf.components;
-    const scope = createScope(component);
-    bindComponentFunc(component.data, scope);
+
+    this.componentInf.data = data;
+    this.componentInf.components = components;
+
+    component.data = (typeof data === 'function') && data() || data;    
+    component.components = components;
+
+    bindComponentFunc(component.data, component);
     checkComponentsName(component.components);
     return component;
-  }
-}
-
-function createScope(component) {
-  return {
-    data: component.data,
-    trackingUpdate: component.trackingUpdate.bind(component)
   }
 }
 

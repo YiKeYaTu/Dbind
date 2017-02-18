@@ -258,9 +258,12 @@ export default class ComponentWatcher {
       const cbs =  this.componentManager.cbFuncs;
       cbs.forEach((item) => {
         if(typeof this.component[item.funcName] === 'function') {
-          this.component[item.funcName].apply(this, item.query || []);
+          setTimeout(() => {
+            this.component[item.funcName].apply(this.component, item.query || [])
+          });
         }
       }); 
+      this.componentManager.cbFuncs = [];
     }
   }
 }
