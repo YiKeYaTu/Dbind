@@ -219,7 +219,7 @@ export default class ElementWatcher {
     const events = [this.events.obEvents, this.events.onceEvents];
     events.forEach((item, index) => {
       if (item.length === 0) return;
-      let obdata = (index === 1 ? this.base.obdata : this.base.obdata);
+      let obdata = (index === 1 ? this.base.obdata : null);
       item.forEach((item) => {
         this.base.element[item.name] = null;
         this.base.removeAttr(item.name);

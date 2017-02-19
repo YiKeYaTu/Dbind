@@ -59,17 +59,17 @@ export default class BaseWatcher {
     this.obdata = nextData;
     this.rendering = delay((time) => {
       if(!this.hasDelete) {
-        this.obwatcher.reset(cb, prevData, nextData, data);
+        this.obwatcher.reset(cb, prevData, nextData);
       }
       this.rendering = null;
       cb();
     });
   }
-  trackingUpdate(data, cb = () => { }, modelExtractId = this.modelExtractId) {
+  trackingUpdate(data, cb = () => { }) {
     const resetWatcherList = [];
     for (let key in data) {
       if (data.hasOwnProperty(key)) {
-        resetWatcherList.push(get(modelExtractId, key));
+        resetWatcherList.push(get(this.modelExtractId, key));
       }
     }
     this.runResetWatcher(resetWatcherList, data, cb);

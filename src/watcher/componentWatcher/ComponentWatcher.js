@@ -43,7 +43,7 @@ export default class ComponentWatcher {
     this.component.didMount();
     cb();
   }
-  reset(cb = () => { }, prevData, nextData, data) {
+  reset(cb = () => { }, prevData, nextData) {
     let componentManager =  this.__getComponentManager();
     if (componentManager && (!this.componentManager || componentManager.id !== this.componentManager.id)) {
       this.componentManager = componentManager;
@@ -54,6 +54,7 @@ export default class ComponentWatcher {
       this.destructor();
     } else {
       const oldProps = this.resolvedProps;
+      const resetWatcherList = [];
       this.resolvedProps = this.__bindProps();
       if (!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
         return;
@@ -61,22 +62,21 @@ export default class ComponentWatcher {
       this.component.setProps(this.resolvedProps);
       this.__execComponentCbFuncs();
       this.component.willUpdate(oldProps, this.resolvedProps);
-      this.base.trackingUpdate(data, cb, this.modelExtractId);
-      // for (let key in oldProps) {
-      //   if (oldProps[key] !== this.component.props[key]) {
-      //     let cb = get(this.modelExtractId, key);
-      //     this.data[key] = this.component.props[key];
-      //     cb && resetWatcherList.push(cb);
-      //   }
-      // }
-      // for (let key in this.component.data) {
-      //   if (this.component.data[key] !== this.data[key]) {
-      //     let cb = get(this.modelExtractId, key);
-      //     this.data[key] = this.component.data[key]
-      //     cb && resetWatcherList.push(cb);
-      //   }
-      // }
-      // this.base.runResetWatcher(resetWatcherList, this.data, cb);
+      for (let key in oldProps) {
+        if (oldProps[key] !== this.component.props[key]) {
+          let cb = get(this.modelExtractId, key);
+          this.data[key] = this.component.props[key];
+          cb && resetWatcherList.push(cb);
+        }
+      }
+      for (let key in this.component.data) {
+        if (this.component.data[key] !== this.data[key]) {
+          let cb = get(this.modelExtractId, key);
+          this.data[key] = this.component.data[key]
+          cb && resetWatcherList.push(cb);
+        }
+      }
+      this.base.runResetWatcher(resetWatcherList, this.data, cb);
     }
   }
   __removeRootNode() {

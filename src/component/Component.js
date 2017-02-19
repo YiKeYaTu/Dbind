@@ -1,5 +1,4 @@
 import { walkElement, objectAssign } from '../utilityFunc/utilityFunc';
-import { all, get, deleteAll } from '../model/modelSettlement';
 
 export const ComponentLifecycle = ['didMount', 'willMount', 'willUpdate', 'shouldUpdate'];
 
@@ -23,7 +22,11 @@ export default class Component {
     this.__setRefs();
   }
   trackingUpdate(data, cb = () => { }) {
-    this.watcher.trackingUpdate(data, cb, this.watcher.obwatcher.modelExtractId);
+    const prevData = objectAssign({}, this.data);
+    for (let key in data) {
+      this.data[key] = data[key];
+    }
+    this.watcher.obwatcher.reset(cb, prevData, this.data);
   }
   setProps(props) {
     this.props = props;
