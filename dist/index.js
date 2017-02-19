@@ -102,6 +102,8 @@
 
 	var _utilityFunc = __webpack_require__(3);
 
+	var _modelSettlement = __webpack_require__(7);
+
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 	var ComponentLifecycle = exports.ComponentLifecycle = ['didMount', 'willMount', 'willUpdate', 'shouldUpdate'];
@@ -136,11 +138,7 @@
 	    value: function trackingUpdate(data) {
 	      var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
 
-	      var prevData = (0, _utilityFunc.objectAssign)({}, this.data);
-	      for (var key in data) {
-	        this.data[key] = data[key];
-	      }
-	      this.watcher.obwatcher.reset(cb, prevData, this.data);
+	      this.watcher.trackingUpdate(data, cb, this.watcher.obwatcher.modelExtractId);
 	    }
 	  }, {
 	    key: 'setProps',
@@ -441,7 +439,7 @@
 	      this.obdata = nextData;
 	      this.rendering = (0, _utilityFunc.delay)(function (time) {
 	        if (!_this.hasDelete) {
-	          _this.obwatcher.reset(cb, prevData, nextData);
+	          _this.obwatcher.reset(cb, prevData, nextData, data);
 	        }
 	        _this.rendering = null;
 	        cb();
@@ -451,11 +449,12 @@
 	    key: 'trackingUpdate',
 	    value: function trackingUpdate(data) {
 	      var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
+	      var modelExtractId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.modelExtractId;
 
 	      var resetWatcherList = [];
 	      for (var key in data) {
 	        if (data.hasOwnProperty(key)) {
-	          resetWatcherList.push((0, _modelSettlement.get)(this.modelExtractId, key));
+	          resetWatcherList.push((0, _modelSettlement.get)(modelExtractId, key));
 	        }
 	      }
 	      this.runResetWatcher(resetWatcherList, data, cb);
@@ -1172,12 +1171,12 @@
 	      var events = [this.events.obEvents, this.events.onceEvents];
 	      events.forEach(function (item, index) {
 	        if (item.length === 0) return;
-	        var obdata = index === 1 ? (0, _utilityFunc.deepClone)(_this8.base.obdata) : _this8.base.obdata;
+	        var obdata = index === 1 ? _this8.base.obdata : _this8.base.obdata;
 	        item.forEach(function (item) {
 	          _this8.base.element[item.name] = null;
 	          _this8.base.removeAttr(item.name);
 	          (0, _Event.on)(_this8.base.element, item.name.substring(2), function ($event) {
-	            new Function('data, $event', 'with(data) { ' + item.value + ' }')(obdata, $event);
+	            new Function('data, $event', 'with(data) { ' + item.value + ' }')(obdata || _this8.base.obdata, $event);
 	          });
 	        });
 	      });
@@ -1564,6 +1563,7 @@
 	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
 	      var prevData = arguments[1];
 	      var nextData = arguments[2];
+	      var data = arguments[3];
 
 	      var componentManager = this.__getComponentManager();
 	      if (componentManager && (!this.componentManager || componentManager.id !== this.componentManager.id)) {
@@ -1575,7 +1575,6 @@
 	        this.destructor();
 	      } else {
 	        var oldProps = this.resolvedProps;
-	        var resetWatcherList = [];
 	        this.resolvedProps = this.__bindProps();
 	        if (!this.component.shouldUpdate(oldProps, this.resolvedProps)) {
 	          return;
@@ -1583,21 +1582,22 @@
 	        this.component.setProps(this.resolvedProps);
 	        this.__execComponentCbFuncs();
 	        this.component.willUpdate(oldProps, this.resolvedProps);
-	        for (var key in oldProps) {
-	          if (oldProps[key] !== this.component.props[key]) {
-	            var _cb = (0, _modelSettlement.get)(this.modelExtractId, key);
-	            this.data[key] = this.component.props[key];
-	            _cb && resetWatcherList.push(_cb);
-	          }
-	        }
-	        for (var _key in this.component.data) {
-	          if (this.component.data[_key] !== this.data[_key]) {
-	            var _cb2 = (0, _modelSettlement.get)(this.modelExtractId, _key);
-	            this.data[_key] = this.component.data[_key];
-	            _cb2 && resetWatcherList.push(_cb2);
-	          }
-	        }
-	        this.base.runResetWatcher(resetWatcherList, this.data, cb);
+	        this.base.trackingUpdate(data, cb, this.modelExtractId);
+	        // for (let key in oldProps) {
+	        //   if (oldProps[key] !== this.component.props[key]) {
+	        //     let cb = get(this.modelExtractId, key);
+	        //     this.data[key] = this.component.props[key];
+	        //     cb && resetWatcherList.push(cb);
+	        //   }
+	        // }
+	        // for (let key in this.component.data) {
+	        //   if (this.component.data[key] !== this.data[key]) {
+	        //     let cb = get(this.modelExtractId, key);
+	        //     this.data[key] = this.component.data[key]
+	        //     cb && resetWatcherList.push(cb);
+	        //   }
+	        // }
+	        // this.base.runResetWatcher(resetWatcherList, this.data, cb);
 	      }
 	    }
 	  }, {

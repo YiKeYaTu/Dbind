@@ -14,24 +14,34 @@
     <app></app>
     <script src="../dist/index.js"></script>
     <script>
+        var User = Dbind.createClass({
+            template: `
+                <h1>
+                    {{msg}}
+                </h1>
+            `
+        });
         var App = Dbind.createClass({
             timer: {},
             data() {
                 return {
                     names: [1, 3 ,4],
+                    msg: 'hellor',
                     click() {
-                        console.log(this.name)
-                        console.log(this.timer);
-                        this.timer.name = 1;
+                        // this.timer.name = 1;
                         this.trackingUpdate({
-                            names: [1 ,4]
+                            msg: [1 ,4]
                         })
                     }
                 }
             },
             template: `
                 <p onclick="{{ click() }}">{{ names }}</p>
-            `
+                <user msg="{{msg}}"></user>
+            `,
+            components: {
+                'user': User
+            }
         });
         Dbind.registerComponent('app', App);
         var app = Dbind.watch(document.body);

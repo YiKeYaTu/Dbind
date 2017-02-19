@@ -219,12 +219,12 @@ export default class ElementWatcher {
     const events = [this.events.obEvents, this.events.onceEvents];
     events.forEach((item, index) => {
       if (item.length === 0) return;
-      let obdata = (index === 1 ? deepClone(this.base.obdata) : this.base.obdata);
+      let obdata = (index === 1 ? this.base.obdata : this.base.obdata);
       item.forEach((item) => {
         this.base.element[item.name] = null;
         this.base.removeAttr(item.name);
         on(this.base.element, item.name.substring(2), ($event) => {
-          (new Function('data, $event', `with(data) { ${item.value} }`))(obdata, $event);
+          (new Function('data, $event', `with(data) { ${item.value} }`))(obdata || this.base.obdata, $event);
         });
       });
     });
