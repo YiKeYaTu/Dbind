@@ -44,9 +44,6 @@ export default class BaseWatcher {
     this.obwatcher.render();
   }
   reset(data, cb = () => { }) {
-    if (this.rendering !== null) {
-      clearTimeout(this.rendering);
-    }
     const prevData = objectAssign({}, this.obdata);
     const nextData = objectAssign({}, this.obdata);
     if (typeof data !== 'object') {
@@ -57,19 +54,18 @@ export default class BaseWatcher {
       }
     }
     this.obdata = nextData;
-    this.rendering = delay((time) => {
-      if(!this.hasDelete) {
-        this.obwatcher.reset(cb, prevData, nextData);
-      }
-      this.rendering = null;
-      cb();
-    });
+    
+    if(!this.hasDelete) {
+      this.obwatcher.reset(cb, prevData, nextData);
+    }
+    cb();
+
   }
-  trackingUpdate(data, cb = () => { }) {
+  trackingUpdate(data, cb = () => { }, modelExtractId = this.modelExtractId) {
     const resetWatcherList = [];
     for (let key in data) {
       if (data.hasOwnProperty(key)) {
-        resetWatcherList.push(get(this.modelExtractId, key));
+        resetWatcherList.push(get(modelExtractId, key));
       }
     }
     this.runResetWatcher(resetWatcherList, data, cb);
@@ -176,9 +172,9 @@ export default class BaseWatcher {
   statementExtract(str) {
     return statementExtract(str);
   }
-  execStatement(statement) {
+  execStatement(statement, data = this.obdata) {
     try {
-      return (new Function('data', `with(data) { return ${statement};}`))(this.obdata);
+      return (new Function('data', `with(data) { return ${statement};}`))(data);
     } catch(e) {
       let errText = '';
       switch(this.obtype) {

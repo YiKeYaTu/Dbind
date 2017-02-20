@@ -25,8 +25,8 @@ export default class ManagerWatcher {
     this.__appendChildWatcherToDOM(childIndex);
   }
   reset(cb = () => { }, prevData, nextData) {
-    let prevLen = prevData[this.vector].length;
-    let nextLen = nextData[this.vector].length;
+    let prevLen = this.base.execStatement(this.vector, prevData).length;
+    let nextLen = this.base.execStatement(this.vector, nextData).length;
     if (prevLen < nextLen) {
       this.render(prevLen);
     } else if (prevLen > nextLen) {

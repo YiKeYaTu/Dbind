@@ -17,17 +17,18 @@ export default class TextWatcher {
     node.parentNode.removeChild(node);
   }
   render(cb = () => { }) {
+    const prevView = this.view;
     this.view = this.__parseView();
-    if (this.watcherType === TextWatcher.textNodeWatcher) {
-      this.base.element.textContent = this.view;
-    } else {
-      this.base.element.innerHTML = this.view;
+    if(prevView != this.view) {
+      if (this.watcherType === TextWatcher.textNodeWatcher) {
+        this.base.element.textContent = this.view;
+      } else {
+        this.base.element.innerHTML = this.view;
+      }
     }
   }
   reset(cb = () => { }, prevData, nextData) {
-    if(prevData !== nextData) {
-      this.render(cb);
-    }
+    this.render(cb);
   }
   __getViewModel() {
     let isTextNode = this.watcherType === TextWatcher.textNodeWatcher;

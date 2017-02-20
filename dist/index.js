@@ -422,13 +422,8 @@
 	  }, {
 	    key: 'reset',
 	    value: function reset(data) {
-	      var _this = this;
-
 	      var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
 
-	      if (this.rendering !== null) {
-	        clearTimeout(this.rendering);
-	      }
 	      var prevData = (0, _utilityFunc.objectAssign)({}, this.obdata);
 	      var nextData = (0, _utilityFunc.objectAssign)({}, this.obdata);
 	      if ((typeof data === 'undefined' ? 'undefined' : _typeof(data)) !== 'object') {
@@ -439,23 +434,22 @@
 	        }
 	      }
 	      this.obdata = nextData;
-	      this.rendering = (0, _utilityFunc.delay)(function (time) {
-	        if (!_this.hasDelete) {
-	          _this.obwatcher.reset(cb, prevData, nextData);
-	        }
-	        _this.rendering = null;
-	        cb();
-	      });
+
+	      if (!this.hasDelete) {
+	        this.obwatcher.reset(cb, prevData, nextData);
+	      }
+	      cb();
 	    }
 	  }, {
 	    key: 'trackingUpdate',
 	    value: function trackingUpdate(data) {
 	      var cb = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : function () {};
+	      var modelExtractId = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : this.modelExtractId;
 
 	      var resetWatcherList = [];
 	      for (var key in data) {
 	        if (data.hasOwnProperty(key)) {
-	          resetWatcherList.push((0, _modelSettlement.get)(this.modelExtractId, key));
+	          resetWatcherList.push((0, _modelSettlement.get)(modelExtractId, key));
 	        }
 	      }
 	      this.runResetWatcher(resetWatcherList, data, cb);
@@ -557,12 +551,12 @@
 	  }, {
 	    key: '__hangonModel',
 	    value: function __hangonModel() {
-	      var _this2 = this;
+	      var _this = this;
 
 	      var model = this.obwatcher.model;
 	      if (model) {
 	        model.forEach(function (item) {
-	          (0, _modelSettlement.set)(_this2.modelExtractId, item, _this2);
+	          (0, _modelSettlement.set)(_this.modelExtractId, item, _this);
 	        });
 	      }
 	    }
@@ -598,8 +592,10 @@
 	  }, {
 	    key: 'execStatement',
 	    value: function execStatement(statement) {
+	      var data = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : this.obdata;
+
 	      try {
-	        return new Function('data', 'with(data) { return ' + statement + ';}')(this.obdata);
+	        return new Function('data', 'with(data) { return ' + statement + ';}')(data);
 	      } catch (e) {
 	        var errText = '';
 	        switch (this.obtype) {
@@ -688,8 +684,8 @@
 	      var prevData = arguments[1];
 	      var nextData = arguments[2];
 
-	      var prevLen = prevData[this.vector].length;
-	      var nextLen = nextData[this.vector].length;
+	      var prevLen = this.base.execStatement(this.vector, prevData).length;
+	      var nextLen = this.base.execStatement(this.vector, nextData).length;
 	      if (prevLen < nextLen) {
 	        this.render(prevLen);
 	      } else if (prevLen > nextLen) {
@@ -2043,11 +2039,14 @@
 	    value: function render() {
 	      var cb = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : function () {};
 
+	      var prevView = this.view;
 	      this.view = this.__parseView();
-	      if (this.watcherType === TextWatcher.textNodeWatcher) {
-	        this.base.element.textContent = this.view;
-	      } else {
-	        this.base.element.innerHTML = this.view;
+	      if (prevView != this.view) {
+	        if (this.watcherType === TextWatcher.textNodeWatcher) {
+	          this.base.element.textContent = this.view;
+	        } else {
+	          this.base.element.innerHTML = this.view;
+	        }
 	      }
 	    }
 	  }, {
@@ -2057,9 +2056,7 @@
 	      var prevData = arguments[1];
 	      var nextData = arguments[2];
 
-	      if (prevData !== nextData) {
-	        this.render(cb);
-	      }
+	      this.render(cb);
 	    }
 	  }, {
 	    key: '__getViewModel',
