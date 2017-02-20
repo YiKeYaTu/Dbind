@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    </head>
+    <body>
+        <div id="vue"> 
+
+            <table border="1">
+                <tr data-each="x in items">
+                    <td data-each='y in items[x]'>{{items[x][y]}}</td>
+                </tr>
+            </table>
+
+        </div>
+    <script src="../dist/index.js"></script>
+    <script>
+    var sexMap = {
+    'true': "男",
+    'false': "女"
+}
+        var now = Date.now();
+        var app = Dbind.watch(window.vue, {
+            items: getIt(500),
+        });
+        console.log(Date.now() - now);
+
+        function getIt(n) {
+            var ret = []
+            for (var i = 0; i < n; i++) {
+                ret.push([
+                    Math.random(),
+                    3 + Math.ceil((Math.random() * 30)),
+                    sexMap[1 - Math.random() > 0.5],
+                    Math.random()
+                ])
+            }
+            return ret
+        }
+        var index = 0
+var array = []
+var timer = setInterval(function () {
+    var now = new Date - 0
+    app.watcher.trackingUpdate({
+        items: getIt(500)
+    }, () => {
+        
+    
+    })
+    var cost = new Date - now
+    console.log(index + " cost " + cost + 'ms')
+    array.push(cost)
+    now = new Date
+    index++
+    if (array.length > 60) {
+        clearInterval(timer)
+        console.log('平均耗时 ', array.reduce(function (a, b) {
+            return a + b
+        }, 0) / 60, 'ms')
+        array.shift()
+          console.log('更新平均耗时 ', array.reduce(function (a, b) {
+            return a + b
+        }, 0) / 60, 'ms')
+    }
+}, 100)
+    </script>
+</body>
+</html>
