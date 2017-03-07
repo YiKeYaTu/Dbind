@@ -119,6 +119,7 @@ export default class ComponentWatcher {
       prop.value.forEach((item) => {
         if (item.type === NOR_STATEMENT_TYPE || item.type === ONCE_STATEMENT_TYPE) {
           let val = this.base.execStatement(item.value);
+          console.log(val);
           if (str === null) {
             str = val;
           } else {
@@ -138,6 +139,8 @@ export default class ComponentWatcher {
     return props;
   }
   __bindChildrenProps(props) {
+    if(this.childrenComponent)
+      return true;
     let children = this.base.element.innerHTML;
     if(children.replace(/\s/g, '')) {
       this.base.element.innerHTML = '';
@@ -151,7 +154,7 @@ export default class ComponentWatcher {
       if(props.children) {
         throw new TypeError('You should not use children props');
       }
-      props.children = childrenComponent;
+      this.childrenComponent = props.children = childrenComponent;
     }
   }
   __renderComponent() {

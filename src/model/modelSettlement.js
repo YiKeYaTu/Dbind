@@ -10,11 +10,9 @@ export function set(modelExtractId, key, watcher) {
   }
   const target = modelSettlement[modelExtractId];
   if (target[key]) {
-    target[key][watcher.obId] = watcher;
+    target[key].push(watcher);
   } else {
-    target[key] = {
-      [watcher.obId]: watcher
-    };
+    target[key] = [watcher];
   }
 }
 export function get(modelExtractId, key) {
@@ -24,6 +22,7 @@ export function all(modelExtractId) {
   return modelSettlement[modelExtractId];
 }
 export function deleteOne(modelExtractId, key) {
+  // modelSettlement[modelExtractId] = sa
   delete modelSettlement[modelExtractId][key];
 }
 export function deleteAll(modelExtractId) {

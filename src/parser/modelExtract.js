@@ -15,7 +15,7 @@ const SPACE = /\s/;
 const BAK_SLANT = /\\/;
 
 const UN_EXPECT_CHAR = {
-  'function': true,
+  'function': true
 };
 
 /**

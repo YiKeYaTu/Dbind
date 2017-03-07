@@ -45,6 +45,12 @@ var vm = new Vue({
 
 var index = 0
 var array = []
+setTimeout(() => {
+    var a = document.getElementsByTagName('*');
+    for(var i = 0, len = a.length; i < len; i ++) {
+        a[i].setAttribute('data-id', i)
+    }
+}, 101); 
 var timer = setInterval(function () {
     var now = new Date - 0
     vm.items = genData(500)

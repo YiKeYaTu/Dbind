@@ -18,7 +18,9 @@
     var app = Observer.watch(document.getElementsByTagName('div')[0], {
         msg: 'hello world',
         reverseMsg: function() {
-            app.watcher.trackingUpdate(() => {}, 'msg', this.msg.split('').reverse().join(''));
+            app.watcher.trackingUpdate({
+                'msg', this.msg.split('').reverse().join('')
+            });
         }
     });
 
@@ -39,6 +41,7 @@
 
 - 这里会提取出a，b并且分别以a，b为键将该watcher的reset方法放入一个全局的对象当中
 - 当触发trackingUpdate方法的时候，watcher将会取出重设的键的所有reset函数并且一一执行
+- 执行速度超过vue，react等框架（未打开控制台条件下）
 
 # 指令
 
@@ -59,7 +62,7 @@
 
 ````
 
-- data-each（循环dom结构，对象可以是普通键值对象或者数组）
+- data-each（循环dom结构，array必须是数组）
 
 ````html
     <body>
@@ -120,17 +123,17 @@
 - 创建一个组件
 
 ````javascript
-    var component = Observer.createComponent({
+    var component = Dbind.createComponent({
         template: '<div>{{ name }}</div>'
     });
-    Observer.registerComponent('App', component);
+    Dbind.registerComponent('App', component);
 
 ````
 
 - 注册一个组件（组件只有被注册之后才能在html里面直接使用）
 
 ````javascript
-    Observer.registerComponent('App', component);
+    Dbind.registerComponent('app', component);
 ````
 - 使用组件（因为data-from为一个指令，将会直接当作javascript解析所以要想使用字符串必须加上引号）
 - data-from指令不仅可以传入一个组件的注册名字还能直接穿入一个组件
@@ -144,10 +147,10 @@
 - 在组件之中使用组件
 
 ````javascript
-    var button = Observer.createComponent({
+    var button = Dbind.createComponent({
         template: `<button>button</button>`
     })
-    var component = Observer.createComponent({
+    var component = Dbind.createComponent({
         template: `<div>
             <component data-from="'button'"></component>
         </div>`,
@@ -161,10 +164,10 @@
 - 组件拥有单独的作用域，如果想要向组件传递消息请使用props
 
 ````javascript
-    var button = Observer.createComponent({
+    var button = Dbind.createComponent({
         template: `<button>{{ val }}</button>`
     })
-    var component = Observer.createComponent({
+    var component = Dbind.createComponent({
         data: {
             val: 'im is a button'
         },
@@ -180,7 +183,7 @@
 
 - 组件生命周期方法
 ````javascript
-    var component = Observer.createComponent({
+    var component = Dbind.createComponent({
         didMount() { // 组件完成渲染
             console.log(this.refs.ul);
         },

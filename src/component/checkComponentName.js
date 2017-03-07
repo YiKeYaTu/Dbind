@@ -6,7 +6,7 @@ export default function checkComponentName(componentName) {
       throw new SyntaxError(`Unexpected token ${componentName}, You should not use an uppercase component name`);
   }
   const dom = document.createElement(componentName);
-  // if(!is(dom, 'HTMLUnknownElement')) {
-  //   throw new SyntaxError(`Unexpected token ${componentName}, You should not use the tag name that already exists in HTML`);
-  // }
+  if(!is(dom, 'HTMLUnknownElement') && !is(dom, 'HTMLElement')) {
+    throw new SyntaxError(`Unexpected token ${componentName}, You should not use the tag name that already exists in HTML`);
+  }
 }

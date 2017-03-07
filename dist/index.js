@@ -823,8 +823,6 @@
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
-
 	var modelSettlement = {};
 
 	function set(modelExtractId, key, watcher) {
@@ -834,9 +832,9 @@
 	  }
 	  var target = modelSettlement[modelExtractId];
 	  if (target[key]) {
-	    target[key][watcher.obId] = watcher;
+	    target[key].push(watcher);
 	  } else {
-	    target[key] = _defineProperty({}, watcher.obId, watcher);
+	    target[key] = [watcher];
 	  }
 	}
 	function get(modelExtractId, key) {
@@ -846,6 +844,7 @@
 	  return modelSettlement[modelExtractId];
 	}
 	function deleteOne(modelExtractId, key) {
+	  // modelSettlement[modelExtractId] = sa
 	  delete modelSettlement[modelExtractId][key];
 	}
 	function deleteAll(modelExtractId) {
@@ -1637,6 +1636,7 @@
 	        prop.value.forEach(function (item) {
 	          if (item.type === _statementExtract.NOR_STATEMENT_TYPE || item.type === _statementExtract.ONCE_STATEMENT_TYPE) {
 	            var val = _this2.base.execStatement(item.value);
+	            console.log(val);
 	            if (str === null) {
 	              str = val;
 	            } else {
@@ -1658,6 +1658,7 @@
 	  }, {
 	    key: '__bindChildrenProps',
 	    value: function __bindChildrenProps(props) {
+	      if (this.childrenComponent) return true;
 	      var children = this.base.element.innerHTML;
 	      if (children.replace(/\s/g, '')) {
 	        this.base.element.innerHTML = '';
@@ -1671,7 +1672,7 @@
 	        if (props.children) {
 	          throw new TypeError('You should not use children props');
 	        }
-	        props.children = childrenComponent;
+	        this.childrenComponent = props.children = childrenComponent;
 	      }
 	    }
 	  }, {
@@ -1924,9 +1925,9 @@
 	    if (code >= 65 && code <= 90) throw new SyntaxError('Unexpected token ' + componentName + ', You should not use an uppercase component name');
 	  }
 	  var dom = document.createElement(componentName);
-	  // if(!is(dom, 'HTMLUnknownElement')) {
-	  //   throw new SyntaxError(`Unexpected token ${componentName}, You should not use the tag name that already exists in HTML`);
-	  // }
+	  if (!(0, _utilityFunc.is)(dom, 'HTMLUnknownElement') && !(0, _utilityFunc.is)(dom, 'HTMLElement')) {
+	    throw new SyntaxError('Unexpected token ' + componentName + ', You should not use the tag name that already exists in HTML');
+	  }
 	}
 
 /***/ },
@@ -2253,19 +2254,13 @@
 	  value: true
 	});
 
-	exports.default = function (resetWatcherList, data, cb) {
+	exports.default = function (resetWatcherList, data) {
 	  var count = 0,
 	      len = 0;
-	  resetWatcherList.forEach(function (watcherPool) {
-	    if (watcherPool) {
-	      for (var id in watcherPool) {
-	        len++;
-	        watcherPool[id].reset(data, function () {
-	          count++;
-	          count === len && cb();
-	        });
-	      }
-	    }
+	  resetWatcherList.forEach(function (watchers) {
+	    watchers.forEach(function (item) {
+	      return item.reset(data);
+	    });
 	  });
 	};
 
